@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Akrantis — Middleware Ambiental</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #f8f8f6;
+  --bg2:       #ffffff;
+  --bg3:       #f2f2ef;
+  --bg4:       #eaeae6;
+  --border:    #e4e4df;
+  --border2:   #d0d0c8;
+  --text:      #0f0f0e;
+  --text2:     #4a4a46;
+  --text3:     #94948e;
+  --green:     #15803d;
+  --green-bg:  #f0fdf4;
+  --green-bd:  #bbf7d0;
+  --green-mid: #16a34a;
+  --amber:     #b45309;
+  --amb-bg:    #fffbeb;
+  --amb-bd:    #fde68a;
+  --red:       #b91c1c;
+  --red-bg:    #fef2f2;
+  --red-bd:    #fecaca;
+  --blue:      #1d4ed8;
+  --blue-bg:   #eff6ff;
+  --blue-bd:   #bfdbfe;
+  --r:         5px;
+  --r2:        9px;
+  --r3:        14px;
+  --shadow:    0 1px 2px rgba(0,0,0,.05), 0 1px 4px rgba(0,0,0,.04);
+  --shadow2:   0 4px 16px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.04);
+  --sb-w:      228px;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow-x:hidden; }
+body {
+  font-family:'Geist',system-ui,sans-serif;
+  background:var(--bg); color:var(--text);
+  font-size:13.5px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button { cursor:pointer; font-family:inherit; }
+input,select,textarea { font-family:inherit; }
+
+/* SHELL */
+.app { display:flex; height:100vh; overflow:hidden; }
+
+/* SIDEBAR */
+.sb {
+  width:var(--sb-w); min-width:var(--sb-w);
+  background:var(--bg2); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden; flex-shrink:0;
+}
+.sb-top { padding:16px 14px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.sb-brand { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.sb-mark {
+  width:26px; height:26px; background:var(--text); border-radius:6px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.sb-mark span { color:#fff; font-size:9px; font-weight:600; font-family:'Geist Mono',monospace; letter-spacing:-.3px; }
+.sb-name { font-size:14px; font-weight:600; color:var(--text); letter-spacing:-.4px; }
+.sb-tagline { font-size:9.5px; color:var(--text3); letter-spacing:.04em; text-transform:uppercase; margin-top:-2px; }
+
+.sb-ctx {
+  display:flex; align-items:center; gap:7px; padding:7px 9px;
+  background:var(--bg3); border:1px solid var(--border); border-radius:var(--r2);
+  cursor:pointer; transition:background .12s; position:relative;
+}
+.sb-ctx:hover { background:var(--bg4); }
+.ctx-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.ctx-dot.ok   { background:var(--green-mid); }
+.ctx-dot.warn { background:#d97706; }
+.ctx-dot.err  { background:var(--red); }
+.sb-ctx-info { flex:1; min-width:0; }
+.sb-ctx-name { font-size:11.5px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sb-ctx-sub  { font-size:10px; color:var(--text3); font-family:'Geist Mono',monospace; }
+.sb-ctx-arr  { font-size:9px; color:var(--text3); flex-shrink:0; }
+
+.ctx-dd {
+  display:none; position:absolute; top:calc(100% + 5px); left:0; right:0;
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2);
+  box-shadow:var(--shadow2); z-index:999; padding:4px; min-width:210px;
+}
+.ctx-dd.open { display:block; }
+.ctx-sec { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--text3); padding:6px 8px 2px; }
+.ctx-opt {
+  display:flex; align-items:center; gap:7px; padding:6px 8px;
+  border-radius:var(--r); cursor:pointer; border:none; background:none; width:100%; text-align:left;
+  transition:background .08s;
+}
+.ctx-opt:hover { background:var(--bg3); }
+.ctx-opt.on { background:var(--bg3); }
+.ctx-rname { font-size:12px; font-weight:500; color:var(--text); }
+.ctx-rsub  { font-size:10px; color:var(--text3); font-family:'Geist Mono',monospace; }
+.ctx-chk   { margin-left:auto; font-size:11px; color:var(--green-mid); }
+.ctx-div   { height:1px; background:var(--border); margin:3px 0; }
+
+/* NAV */
+.sb-nav { flex:1; padding:8px 8px 4px; overflow-y:auto; overflow-x:hidden; }
+.sb-nav::-webkit-scrollbar { width:2px; }
+.sb-nav::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.nav-sec { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--text3); padding:10px 8px 3px; }
+.nav-btn {
+  display:flex; align-items:center; gap:8px; width:100%;
+  padding:6.5px 9px; border:none; background:none; border-radius:var(--r2);
+  font-size:12.5px; color:var(--text2); text-align:left;
+  transition:background .1s, color .1s; white-space:nowrap; overflow:hidden;
+}
+.nav-btn:hover { background:var(--bg3); color:var(--text); }
+.nav-btn.on    { background:var(--bg4); color:var(--text); font-weight:500; }
+.nav-ico { width:16px; text-align:center; font-size:13px; flex-shrink:0; opacity:.6; }
+.nav-btn.on .nav-ico { opacity:1; }
+.nav-label { flex:1; overflow:hidden; text-overflow:ellipsis; }
+.nav-badge {
+  margin-left:auto; font-size:9.5px; font-weight:600; padding:1px 5px;
+  border-radius:9px; line-height:1.5; flex-shrink:0;
+}
+.nav-badge.r { background:var(--red-bg);  color:var(--red);  border:1px solid var(--red-bd); }
+.nav-badge.a { background:var(--amb-bg);  color:var(--amber); border:1px solid var(--amb-bd); }
+.nav-div { height:1px; background:var(--border); margin:5px 6px; }
+
+.sb-foot {
+  padding:11px 14px; border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:9px; flex-shrink:0;
+}
+.sb-av {
+  width:28px; height:28px; border-radius:50%; background:var(--bg4);
+  border:1px solid var(--border2); display:flex; align-items:center;
+  justify-content:center; font-size:10px; font-weight:600; color:var(--text2); flex-shrink:0;
+}
+.sb-fn { font-size:11.5px; font-weight:500; color:var(--text); }
+.sb-fr { font-size:10px; color:var(--text3); }
+
+/* MAIN */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.topbar {
+  height:50px; min-height:50px; background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 24px; gap:14px; flex-shrink:0;
+}
+.topbar-title { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+.topbar-acts  { display:flex; gap:8px; align-items:center; }
+.burger {
+  display:none; width:32px; height:32px; background:var(--bg3);
+  border:1px solid var(--border); border-radius:var(--r);
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; cursor:pointer; flex-shrink:0;
+}
+.burger span { display:block; width:14px; height:1.5px; background:var(--text); border-radius:1px; }
+.sb-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3); z-index:700; }
+.sb-ov.open { display:block; }
+
+/* PAGE CONTAINER */
+.page { display:none; flex:1; overflow-y:auto; overflow-x:hidden; }
+.page.on { display:block; }
+.pg { padding:22px 24px 48px; max-width:100%; }
+
+/* ── ATOMS ── */
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:11px; font-weight:500; padding:2px 8px;
+  border-radius:20px; white-space:nowrap; border:1px solid;
+}
+.badge::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.badge.ok   { background:var(--green-bg);  color:var(--green);  border-color:var(--green-bd); }
+.badge.ok::before   { background:var(--green-mid); }
+.badge.warn { background:var(--amb-bg);   color:var(--amber);  border-color:var(--amb-bd); }
+.badge.warn::before { background:#d97706; }
+.badge.err  { background:var(--red-bg);   color:var(--red);    border-color:var(--red-bd); }
+.badge.err::before  { background:var(--red); }
+.badge.blue { background:var(--blue-bg);  color:var(--blue);   border-color:var(--blue-bd); }
+.badge.blue::before { background:var(--blue); }
+.badge.neu  { background:var(--bg3);      color:var(--text2);  border-color:var(--border); }
+.badge.neu::before  { background:var(--text3); }
+.badge.nd::before   { display:none; }
+.badge.pulse { animation:blink 2s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.45;} }
+
+/* strength label */
+.slabel {
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:10px; font-weight:600; padding:2px 6px;
+  border-radius:4px; white-space:nowrap; letter-spacing:.02em;
+}
+.slabel.strong  { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.slabel.weak    { background:#fefce8; color:#713f12; border:1px solid #fde68a; }
+.slabel.manual  { background:#fff7ed; color:#9a3412; border:1px solid #fdba74; }
+
+/* BUTTON */
+.btn {
+  display:inline-flex; align-items:center; gap:5px;
+  height:32px; padding:0 13px; border-radius:var(--r2);
+  font-size:12.5px; font-weight:500; border:none;
+  transition:all .12s; white-space:nowrap; cursor:pointer;
+}
+.btn-p   { background:var(--text); color:#fff; }
+.btn-p:hover { background:#222; }
+.btn-s   { background:var(--bg3); color:var(--text2); border:1px solid var(--border); }
+.btn-s:hover { background:var(--bg4); color:var(--text); border-color:var(--border2); }
+.btn-r   { background:var(--red-bg); color:var(--red); border:1px solid var(--red-bd); }
+.btn-r:hover { background:#fee2e2; }
+.btn-sm  { height:27px; padding:0 9px; font-size:11.5px; }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* CARD */
+.card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r3); padding:18px; margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.card-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); }
+
+/* FILTER BAR */
+.fbar { display:flex; gap:7px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+.fi {
+  height:32px; padding:0 10px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:var(--r2);
+  color:var(--text); font-size:12.5px; outline:none; transition:border .12s;
+  min-width:160px; max-width:200px;
+}
+.fi::placeholder { color:var(--text3); }
+.fi:focus { border-color:var(--border2); }
+.fs {
+  height:32px; padding:0 26px 0 9px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:var(--r2);
+  color:var(--text2); font-size:12.5px; outline:none; cursor:pointer;
+  -webkit-appearance:none; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 7px center;
+}
+.fs option { background:#fff; }
+.fcount { font-size:11px; color:var(--text3); margin-left:auto; font-family:'Geist Mono',monospace; }
+
+/* TABLE */
+.tw  { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2); overflow:hidden; box-shadow:var(--shadow); }
+.tws { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:480px; }
+thead th {
+  font-size:10.5px; font-weight:600; color:var(--text3);
+  padding:9px 14px; background:var(--bg3); border-bottom:1px solid var(--border);
+  text-align:left; letter-spacing:.03em; white-space:nowrap;
+}
+tbody td { padding:10px 14px; border-bottom:1px solid var(--border); font-size:12.5px; color:var(--text2); vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr { cursor:pointer; transition:background .08s; }
+tbody tr:hover td { background:var(--bg3); }
+.tn { font-weight:500; color:var(--text); }
+.tm { font-family:'Geist Mono',monospace; font-size:11.5px; color:var(--text3); }
+
+/* ALERT */
+.alert {
+  padding:11px 14px; border-radius:var(--r2); font-size:12.5px;
+  line-height:1.55; margin-bottom:14px; border:1px solid;
+}
+.alert.r { background:var(--red-bg);   border-color:var(--red-bd);   color:#991b1b; }
+.alert.a { background:var(--amb-bg);   border-color:var(--amb-bd);   color:#78350f; }
+.alert.g { background:var(--green-bg); border-color:var(--green-bd); color:#14532d; }
+.alert.b { background:var(--blue-bg);  border-color:var(--blue-bd);  color:#1e3a8a; }
+.alert.n { background:var(--bg3);      border-color:var(--border);   color:var(--text2); }
+.alert strong { display:block; font-weight:600; margin-bottom:2px; font-size:12.5px; }
+
+/* DRAWER */
+.dw-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.12); z-index:800; }
+.dw-ov.open { display:block; }
+.dw {
+  position:fixed; top:0; right:0; bottom:0; width:520px; max-width:100vw;
+  background:var(--bg2); border-left:1px solid var(--border);
+  z-index:801; box-shadow:var(--shadow2);
+  transform:translateX(100%); transition:transform .22s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+}
+.dw.open { transform:translateX(0); }
+.dw-hd {
+  padding:18px 20px 14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:flex-start; gap:10px; flex-shrink:0;
+}
+.dw-title { font-size:15px; font-weight:600; color:var(--text); flex:1; }
+.dw-sub   { font-size:11px; color:var(--text3); margin-top:2px; font-family:'Geist Mono',monospace; }
+.dw-close {
+  width:28px; height:28px; border-radius:var(--r); background:var(--bg3);
+  border:1px solid var(--border); color:var(--text3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; cursor:pointer; flex-shrink:0; transition:all .1s;
+}
+.dw-close:hover { color:var(--text); border-color:var(--border2); }
+.dw-tabs {
+  display:flex; border-bottom:1px solid var(--border);
+  padding:0 20px; flex-shrink:0; background:var(--bg2);
+}
+.dw-tab {
+  padding:8px 12px; font-size:12px; font-weight:500; color:var(--text3);
+  border:none; background:none; border-bottom:2px solid transparent;
+  margin-bottom:-1px; cursor:pointer; transition:all .12s; white-space:nowrap;
+}
+.dw-tab:hover { color:var(--text2); }
+.dw-tab.on { color:var(--text); border-bottom-color:var(--text); }
+.dw-body { flex:1; overflow-y:auto; }
+.dw-body::-webkit-scrollbar { width:3px; }
+.dw-body::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.dw-pane { display:none; padding:20px; }
+.dw-pane.on { display:block; }
+.dw-ft {
+  padding:14px 20px; border-top:1px solid var(--border);
+  display:flex; gap:7px; flex-shrink:0; flex-wrap:wrap;
+}
+
+/* SECTION LABEL */
+.sec-lbl {
+  font-size:10px; font-weight:600; text-transform:uppercase;
+  letter-spacing:.07em; color:var(--text3); margin-bottom:9px;
+}
+.sep { height:1px; background:var(--border); margin:16px 0; }
+
+/* KV ROWS */
+.kv { display:flex; align-items:flex-start; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+.kv:last-child { border-bottom:none; }
+.kv-l { color:var(--text3); flex:0 0 130px; font-size:11.5px; }
+.kv-v { color:var(--text); font-weight:500; flex:1; }
+
+/* GRID 2 */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.gf label { font-size:10.5px; color:var(--text3); display:block; margin-bottom:3px; }
+.gf span  { font-size:13px; font-weight:500; color:var(--text); }
+
+/* SUMMARY CARDS */
+.summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+.sc {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r3); padding:18px 16px; cursor:pointer;
+  transition:border-color .12s, box-shadow .12s; box-shadow:var(--shadow);
+}
+.sc:hover { border-color:var(--border2); box-shadow:0 2px 8px rgba(0,0,0,.07); }
+.sc-num  { font-size:32px; font-weight:600; line-height:1; margin-bottom:5px; letter-spacing:-.5px; }
+.sc-label { font-size:11.5px; color:var(--text3); }
+.sc-sub   { font-size:10.5px; color:var(--text3); margin-top:5px; }
+.sc-num.g { color:var(--green); }
+.sc-num.r { color:var(--red); }
+.sc-num.a { color:var(--amber); }
+.sc-num.b { color:var(--blue); }
+
+/* LOTE CARDS */
+.lote-list { display:flex; flex-direction:column; gap:8px; }
+.lote-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r3); padding:16px 18px; cursor:pointer;
+  transition:border-color .12s, box-shadow .12s; box-shadow:var(--shadow);
+}
+.lote-card:hover { border-color:var(--border2); box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.lote-card.err  { border-left:3px solid var(--red); }
+.lote-card.warn { border-left:3px solid #d97706; }
+.lote-card.ok   { border-left:3px solid var(--green-mid); }
+.lote-card.neu  { border-left:3px solid var(--border2); }
+.lote-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.lote-num    { font-size:11px; font-family:'Geist Mono',monospace; color:var(--text3); flex-shrink:0; }
+.lote-name   { font-size:13px; font-weight:600; color:var(--text); flex:1; min-width:0; }
+.lote-meta   { display:flex; gap:14px; font-size:11.5px; color:var(--text3); flex-wrap:wrap; }
+.lote-meta span { display:flex; align-items:center; gap:4px; }
+
+/* FLOW STEPPER */
+.stepper { display:flex; align-items:flex-start; gap:0; margin:12px 0 0; overflow-x:auto; padding-bottom:2px; }
+.step { display:flex; flex-direction:column; align-items:center; flex:1; min-width:72px; position:relative; }
+.step:not(:last-child)::after {
+  content:''; position:absolute; top:12px; left:calc(50% + 14px);
+  right:calc(-50% + 14px); height:1px; background:var(--border); z-index:0;
+}
+.step.done:not(:last-child)::after { background:var(--green-mid); }
+.step-dot {
+  width:24px; height:24px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:600; z-index:1; flex-shrink:0;
+  border:1.5px solid var(--border); background:var(--bg3); color:var(--text3);
+  transition:all .2s;
+}
+.step.done   .step-dot { background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
+.step.active .step-dot { background:var(--bg2); border-color:var(--text); color:var(--text); animation:stepPulse 2s ease infinite; }
+.step.block  .step-dot { background:var(--red-bg); border-color:var(--red-bd); color:var(--red); }
+@keyframes stepPulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,0,0,.15);} 50%{box-shadow:0 0 0 4px rgba(0,0,0,0);} }
+.step-lbl { font-size:10px; color:var(--text3); margin-top:5px; text-align:center; white-space:nowrap; }
+.step.done   .step-lbl { color:var(--green); }
+.step.active .step-lbl { color:var(--text); font-weight:500; }
+.step.block  .step-lbl { color:var(--red); }
+
+/* HEALTH CHIPS */
+.health-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.hchip {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:11px; padding:3px 9px; border-radius:20px; font-weight:500; border:1px solid;
+}
+.hchip.ok   { background:var(--green-bg); color:var(--green); border-color:var(--green-bd); }
+.hchip.warn { background:var(--amb-bg);   color:var(--amber); border-color:var(--amb-bd); }
+.hchip.err  { background:var(--red-bg);   color:var(--red);   border-color:var(--red-bd); }
+.hchip.neu  { background:var(--bg3);      color:var(--text3); border-color:var(--border); }
+
+/* PARTNER CARDS */
+.partner-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r3); overflow:hidden; box-shadow:var(--shadow);
+  margin-bottom:10px; cursor:pointer; transition:border-color .12s;
+}
+.partner-card:hover { border-color:var(--border2); }
+.pc-hd { padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.pc-ico {
+  width:36px; height:36px; border-radius:var(--r2); background:var(--bg3);
+  border:1px solid var(--border); display:flex; align-items:center;
+  justify-content:center; font-size:15px; flex-shrink:0;
+}
+.pc-name { font-size:13px; font-weight:600; color:var(--text); }
+.pc-cnpj { font-size:10px; font-family:'Geist Mono',monospace; color:var(--text3); margin-top:1px; }
+.pc-status { margin-left:auto; }
+.pc-body { padding:0 16px 14px; display:flex; flex-direction:column; gap:6px; }
+.apt-row { display:flex; align-items:flex-start; gap:8px; font-size:12px; }
+.apt-key { color:var(--text3); width:120px; flex-shrink:0; }
+.apt-val { color:var(--text); font-weight:500; flex:1; }
+.pc-footer {
+  padding:10px 16px; background:var(--bg3); border-top:1px solid var(--border);
+  display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+}
+.apt-chip {
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:10px; font-weight:500; padding:2px 8px;
+  border-radius:4px; border:1px solid;
+}
+.apt-chip.ok   { background:var(--green-bg); color:var(--green); border-color:var(--green-bd); }
+.apt-chip.warn { background:var(--amb-bg);   color:var(--amber); border-color:var(--amb-bd); }
+.apt-chip.err  { background:var(--red-bg);   color:var(--red);   border-color:var(--red-bd); }
+.apt-chip.neu  { background:var(--bg2);      color:var(--text3); border-color:var(--border); }
+.pc-doc-link { margin-left:auto; font-size:11px; color:var(--blue); cursor:pointer; text-decoration:none; white-space:nowrap; }
+.pc-doc-link:hover { text-decoration:underline; }
+
+/* EVIDÊNCIA ROWS */
+.ev-row {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.ev-row:last-child { border-bottom:none; }
+.ev-icon {
+  width:32px; height:32px; border-radius:var(--r2); background:var(--bg3);
+  border:1px solid var(--border); display:flex; align-items:center;
+  justify-content:center; font-size:12px; flex-shrink:0;
+}
+.ev-icon.strong { background:var(--green-bg); border-color:var(--green-bd); }
+.ev-icon.weak   { background:var(--amb-bg);   border-color:var(--amb-bd); }
+.ev-name  { font-size:12.5px; font-weight:500; color:var(--text); }
+.ev-meta  { font-size:11px; color:var(--text3); margin-top:1px; }
+.ev-right { margin-left:auto; display:flex; align-items:center; gap:7px; }
+
+/* SCORE BAR */
+.sbar-row { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+.sbar-lbl { font-size:11.5px; color:var(--text3); width:130px; flex-shrink:0; }
+.sbar-t   { flex:1; height:4px; background:var(--bg4); border-radius:2px; overflow:hidden; }
+.sbar-f   { height:100%; border-radius:2px; }
+.sbar-f.h { background:var(--green-mid); }
+.sbar-f.m { background:#d97706; }
+.sbar-f.l { background:var(--red); }
+.sbar-pct { font-size:11px; font-weight:600; font-family:'Geist Mono',monospace; width:32px; text-align:right; flex-shrink:0; }
+.sbar-pct.h { color:var(--green); }
+.sbar-pct.m { color:var(--amber); }
+.sbar-pct.l { color:var(--red); }
+
+/* COVERAGE */
+.cov-row { display:flex; align-items:center; gap:12px; margin-bottom:9px; }
+.cov-l { font-size:12.5px; color:var(--text2); width:155px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cov-t { flex:1; height:5px; background:var(--bg4); border-radius:3px; overflow:hidden; }
+.cov-f { height:100%; border-radius:3px; }
+.cov-f.h { background:var(--green-mid); }
+.cov-f.m { background:#d97706; }
+.cov-f.l { background:var(--red); }
+.cov-p { font-size:11px; font-weight:600; font-family:'Geist Mono',monospace; width:32px; text-align:right; color:var(--text3); flex-shrink:0; }
+
+/* UPLOAD ZONE */
+.upl {
+  border:1.5px dashed var(--border2); border-radius:var(--r3);
+  padding:28px 20px; text-align:center; cursor:pointer;
+  transition:all .12s; background:var(--bg3); margin-bottom:14px;
+}
+.upl:hover { background:var(--bg4); }
+.upl.done  { border-style:solid; border-color:var(--green-bd); background:var(--green-bg); }
+.upl-t { font-size:13px; font-weight:500; color:var(--text2); margin-bottom:3px; }
+.upl-s { font-size:11.5px; color:var(--text3); }
+
+/* PLOG */
+.plog { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r2); padding:13px 15px; }
+.plog-t { font-size:9.5px; color:var(--text3); font-weight:600; letter-spacing:.07em; text-transform:uppercase; margin-bottom:9px; font-family:'Geist Mono',monospace; }
+.plog-r { display:flex; align-items:center; gap:9px; margin-bottom:5px; }
+.plog-r:last-child { margin-bottom:0; }
+.plog-d { width:13px; height:13px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-size:7px; flex-shrink:0; }
+.plog-d.done { background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
+.plog-d.act  { background:var(--bg4); border-color:var(--border2); animation:stepPulse 1s ease infinite; }
+.plog-d.pend { background:var(--bg3); border-color:var(--border); }
+.plog-tx { font-size:11.5px; color:var(--text2); }
+.plog-tx.done { color:var(--text3); }
+.plog-tx.act  { color:var(--text); font-weight:500; }
+
+/* CNPJ LOOKUP */
+.cnpj-row { display:flex; gap:7px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+.cnpj-row .fi { flex:1; max-width:none; min-width:0; }
+.fbtn {
+  height:32px; padding:0 13px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:var(--r2); color:var(--text); font-size:12.5px; font-weight:500;
+  display:flex; align-items:center; gap:5px; flex-shrink:0; cursor:pointer;
+  transition:border-color .12s;
+}
+.fbtn:hover:not(:disabled) { border-color:var(--border2); }
+.fbtn:disabled { opacity:.4; cursor:not-allowed; }
+.spin { width:10px; height:10px; border:1.5px solid rgba(0,0,0,.15); border-top-color:var(--text); border-radius:50%; animation:rot .6s linear infinite; display:none; }
+.spin.on { display:block; }
+@keyframes rot { to { transform:rotate(360deg); } }
+.rb { border-radius:var(--r2); overflow:hidden; display:none; margin-top:8px; border:1px solid; }
+.rb.show { display:block; }
+.rb-hd { padding:8px 12px; display:flex; align-items:center; justify-content:space-between; }
+.rb-hd.ok   { background:var(--green-bg); }
+.rb-hd.err  { background:var(--red-bg);   }
+.rb-hd.warn { background:var(--amb-bg);   }
+.rb-hl { font-size:12px; font-weight:600; }
+.rb-hl.ok   { color:var(--green); }
+.rb-hl.err  { color:var(--red); }
+.rb-hl.warn { color:var(--amber); }
+.rb-body { padding:12px; background:var(--bg3); border-top:1px solid var(--border); border-radius:0 0 var(--r2) var(--r2); }
+
+/* FORM */
+.ff { margin-bottom:11px; }
+.fl { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text3); display:block; margin-bottom:4px; }
+.fi2 {
+  width:100%; height:33px; padding:0 10px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:var(--r2); color:var(--text);
+  font-size:12.5px; outline:none; transition:border .12s;
+}
+.fi2::placeholder { color:var(--text3); }
+.fi2:focus { border-color:var(--border2); }
+.fi2-ta { width:100%; padding:8px 10px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--r2); color:var(--text); font-size:12.5px; outline:none; resize:vertical; min-height:64px; transition:border .12s; }
+.fi2-ta::placeholder { color:var(--text3); }
+.fi2-ta:focus { border-color:var(--border2); }
+.fg2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+select.fi2 { -webkit-appearance:none; appearance:none; cursor:pointer; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
+select.fi2 option { background:#fff; }
+.suc { display:none; padding:11px 13px; background:var(--green-bg); border:1px solid var(--green-bd); border-radius:var(--r2); margin-top:9px; gap:8px; align-items:flex-start; }
+.suc.show { display:flex; }
+.suc h4 { font-size:12.5px; font-weight:600; color:var(--green); margin-bottom:1px; }
+.suc p  { font-size:11.5px; color:#14532d; opacity:.85; }
+code { font-family:'Geist Mono',monospace; background:var(--bg3); padding:1px 5px; border-radius:3px; font-size:11px; }
+
+/* MAP */
+.map-wrap { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r3); padding:24px 16px; overflow-x:auto; }
+.map-c  { display:flex; flex-direction:column; align-items:center; min-width:580px; }
+.mn { display:inline-flex; flex-direction:column; align-items:center; padding:10px 14px; border-radius:var(--r2); border:1px solid; cursor:pointer; text-align:center; min-width:90px; transition:box-shadow .12s; }
+.mn:hover { box-shadow:var(--shadow2); }
+.mn.root { border-color:var(--border2); background:var(--bg2); }
+.mn.ok   { border-color:var(--green-bd); background:var(--green-bg); }
+.mn.warn { border-color:var(--amb-bd);   background:var(--amb-bg); }
+.mn.err  { border-color:var(--red-bd);   background:var(--red-bg); }
+.mn-n { font-size:11.5px; font-weight:600; color:var(--text); }
+.mn-s { font-size:10px; color:var(--text3); font-family:'Geist Mono',monospace; margin-top:1px; }
+.ml   { width:1px; height:16px; background:var(--border); margin:0 auto; }
+.mr   { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.mc   { display:flex; flex-direction:column; align-items:center; }
+
+/* PENDING QUEUE */
+.pend-item { display:flex; align-items:flex-start; gap:12px; padding:13px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+.pend-item:last-child { border-bottom:none; }
+.pend-sev { width:4px; min-height:40px; border-radius:2px; flex-shrink:0; align-self:stretch; }
+.pend-sev.high { background:var(--red); }
+.pend-sev.mid  { background:#d97706; }
+.pend-sev.low  { background:var(--blue); }
+.pend-body { flex:1; min-width:0; }
+.pend-title { font-size:13px; font-weight:500; color:var(--text); }
+.pend-meta  { font-size:11px; color:var(--text3); margin-top:3px; }
+.pend-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
+
+/* CERT */
+.cert { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r2); padding:14px; }
+.cert-hd { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--text3); margin-bottom:11px; font-family:'Geist Mono',monospace; }
+.cert-g  { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.cef label { font-size:10px; color:var(--text3); display:block; margin-bottom:2px; }
+.cef span  { font-size:12px; font-weight:500; color:var(--text); }
+.cert-foot { display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:11px; color:var(--text3); }
+
+/* ═══ DOCUMENTAÇÕES ═══ */
+.doc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; }
+.doc-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r3);
+  overflow:hidden; box-shadow:var(--shadow); cursor:pointer;
+  transition:border-color .12s, box-shadow .12s;
+}
+.doc-card:hover { border-color:var(--border2); box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.doc-card.valid  { border-top:3px solid var(--green-mid); }
+.doc-card.expiring { border-top:3px solid #d97706; }
+.doc-card.expired  { border-top:3px solid var(--red); }
+.doc-card.partial  { border-top:3px solid var(--blue); }
+.doc-header {
+  padding:14px 16px 10px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+}
+.doc-partner { font-size:13px; font-weight:600; color:var(--text); }
+.doc-type    { font-size:10.5px; color:var(--text3); margin-top:2px; font-family:'Geist Mono',monospace; }
+.doc-body { padding:0 16px 12px; }
+.doc-row { display:flex; gap:6px; align-items:center; font-size:12px; color:var(--text2); margin-bottom:4px; }
+.doc-row-l { color:var(--text3); width:70px; flex-shrink:0; font-size:11px; }
+.doc-footer {
+  padding:10px 16px; background:var(--bg3); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}
+.doc-impact {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10.5px; font-weight:600; padding:3px 8px;
+  border-radius:var(--r); border:1px solid;
+}
+.doc-impact.apto    { background:var(--green-bg); color:var(--green); border-color:var(--green-bd); }
+.doc-impact.risco   { background:var(--amb-bg); color:var(--amber); border-color:var(--amb-bd); }
+.doc-impact.inapto  { background:var(--red-bg); color:var(--red); border-color:var(--red-bd); }
+
+/* leitura status indicator */
+.leitura-bar {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 12px; background:var(--bg3); border-radius:var(--r); border:1px solid var(--border);
+  margin-bottom:12px;
+}
+.leitura-bar-fill-wrap { flex:1; height:4px; background:var(--bg4); border-radius:2px; overflow:hidden; }
+.leitura-bar-fill { height:100%; border-radius:2px; background:var(--green-mid); transition:width .5s; }
+.leitura-bar-label { font-size:11px; font-weight:600; color:var(--text3); white-space:nowrap; font-family:'Geist Mono',monospace; }
+
+/* campo extraído */
+.extracted-field {
+  display:flex; align-items:flex-start; gap:8px; padding:7px 10px;
+  background:var(--bg3); border-radius:var(--r); margin-bottom:5px; border:1px solid var(--border);
+}
+.ef-key   { font-size:11px; color:var(--text3); width:120px; flex-shrink:0; }
+.ef-val   { font-size:12px; font-weight:500; color:var(--text); flex:1; }
+.ef-conf  { font-size:10px; font-family:'Geist Mono',monospace; flex-shrink:0; }
+.ef-conf.h { color:var(--green); }
+.ef-conf.m { color:var(--amber); }
+.ef-conf.l { color:var(--red); }
+
+/* aptidão derivada notice */
+.apt-derived {
+  font-size:11.5px; color:var(--text3); font-style:italic;
+  padding:8px 12px; background:var(--bg3); border-radius:var(--r); border:1px solid var(--border);
+  margin-top:10px;
+}
+
+/* RESPONSIVE */
+@media(max-width:900px) {
+  .summary-grid { grid-template-columns:1fr 1fr; }
+  .doc-grid { grid-template-columns:1fr; }
+}
+@media(max-width:768px) {
+  html,body { height:auto; min-height:100%; }
+  .app { display:block; height:auto; min-height:100vh; overflow-x:hidden; }
+  .sb { position:fixed; top:0; left:0; bottom:0; width:270px; max-width:88vw; z-index:750; transform:translateX(-100%); transition:transform .22s cubic-bezier(.4,0,.2,1); box-shadow:var(--shadow2); }
+  .sb.open { transform:translateX(0); }
+  .main { width:100%; min-height:100vh; }
+  .burger { display:flex; }
+  .topbar { padding:0 14px; gap:8px; position:sticky; top:0; z-index:600; }
+  .topbar-title { font-size:13px; }
+  .pg { padding:14px 14px 52px; }
+  .summary-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .g2,.fg2,.cert-g { grid-template-columns:1fr; }
+  .dw { width:100%; max-width:100vw; }
+  .dw-pane { padding:14px; }
+  .fbar { gap:6px; }
+  .fi,.fs { min-width:0; flex:1 1 130px; max-width:100%; }
+  .tws { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table { min-width:520px; }
+  .stepper { gap:0; }
+  .doc-grid { grid-template-columns:1fr; }
+}
+@media(max-width:480px) {
+  .summary-grid { grid-template-columns:1fr; }
+  .pg { padding:12px 12px 52px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sb-ov" id="sb-ov" onclick="closeSb()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sb" id="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-mark"><span>AK</span></div>
+      <div>
+        <div class="sb-name">Akrantis</div>
+        <div class="sb-tagline">Middleware Ambiental</div>
+      </div>
+    </div>
+    <div class="sb-ctx" id="sb-ctx-btn" onclick="toggleCtx(event)">
+      <span class="ctx-dot ok" id="ctx-dot"></span>
+      <div class="sb-ctx-info">
+        <div class="sb-ctx-name" id="ctx-name">BRK Ambiental</div>
+        <div class="sb-ctx-sub"  id="ctx-sub">Grupo &middot; 5 unidades</div>
+      </div>
+      <span class="sb-ctx-arr">&#9660;</span>
+      <div class="ctx-dd" id="ctx-dd">
+        <div class="ctx-sec">Vis&atilde;o</div>
+        <button class="ctx-opt on" id="copt-grupo" onclick="setCtx('grupo',event)">
+          <span class="ctx-dot ok"></span>
+          <div><div class="ctx-rname">BRK Ambiental</div><div class="ctx-rsub">Grupo &middot; 5 unidades</div></div>
+          <span class="ctx-chk" id="cchk-grupo">&#10003;</span>
+        </button>
+        <div class="ctx-div"></div>
+        <div class="ctx-sec">Unidade</div>
+        <button class="ctx-opt" id="copt-campinas" onclick="setCtx('campinas',event)"><span class="ctx-dot ok"></span><div><div class="ctx-rname">BRK &mdash; Campinas</div><div class="ctx-rsub">0012 &middot; SP</div></div><span class="ctx-chk" id="cchk-campinas" style="display:none">&#10003;</span></button>
+        <button class="ctx-opt" id="copt-rj"       onclick="setCtx('rj',event)"><span class="ctx-dot warn"></span><div><div class="ctx-rname">BRK &mdash; Rio de Janeiro</div><div class="ctx-rsub">0008 &middot; RJ</div></div><span class="ctx-chk" id="cchk-rj" style="display:none">&#10003;</span></button>
+        <button class="ctx-opt" id="copt-bh"       onclick="setCtx('bh',event)"><span class="ctx-dot ok"></span><div><div class="ctx-rname">BRK &mdash; Belo Horizonte</div><div class="ctx-rsub">0015 &middot; MG</div></div><span class="ctx-chk" id="cchk-bh" style="display:none">&#10003;</span></button>
+        <button class="ctx-opt" id="copt-poa"      onclick="setCtx('poa',event)"><span class="ctx-dot err"></span><div><div class="ctx-rname">BRK &mdash; Porto Alegre</div><div class="ctx-rsub">0019 &middot; RS &middot; bloqueada</div></div><span class="ctx-chk" id="cchk-poa" style="display:none">&#10003;</span></button>
+        <button class="ctx-opt" id="copt-for"      onclick="setCtx('for',event)"><span class="ctx-dot ok"></span><div><div class="ctx-rname">BRK &mdash; Fortaleza</div><div class="ctx-rsub">0023 &middot; CE</div></div><span class="ctx-chk" id="cchk-for" style="display:none">&#10003;</span></button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <button class="nav-btn on" id="nav-visao" onclick="go('visao',this)"><span class="nav-ico">&#8862;</span><span class="nav-label">Vis&atilde;o Geral</span></button>
+
+    <div class="nav-sec">Opera&ccedil;&atilde;o</div>
+    <button class="nav-btn" id="nav-lotes"      onclick="go('lotes',this)"><span class="nav-ico">&#9636;</span><span class="nav-label">Fluxo de Lotes</span></button>
+    <button class="nav-btn" id="nav-ingestao"   onclick="go('ingestao',this)"><span class="nav-ico">&#8595;</span><span class="nav-label">Ingest&atilde;o</span><span class="nav-badge r">4</span></button>
+    <button class="nav-btn" id="nav-pendencias" onclick="go('pendencias',this)"><span class="nav-ico">&#9888;</span><span class="nav-label">Pend&ecirc;ncias</span><span class="nav-badge r">6</span></button>
+
+    <div class="nav-sec">Parceiros</div>
+    <button class="nav-btn" id="nav-transportadores" onclick="go('transportadores',this)"><span class="nav-ico">&#9697;</span><span class="nav-label">Transportadores</span></button>
+    <button class="nav-btn" id="nav-destinadores"    onclick="go('destinadores',this)"><span class="nav-ico">&#9672;</span><span class="nav-label">Destinadores</span></button>
+    <button class="nav-btn" id="nav-documentacoes"   onclick="go('documentacoes',this)"><span class="nav-ico">&#9741;</span><span class="nav-label">Documenta&ccedil;&otilde;es</span><span class="nav-badge a">1</span></button>
+
+    <div class="nav-sec">Empresa</div>
+    <button class="nav-btn" id="nav-unidades"  onclick="go('unidades',this)"><span class="nav-ico">&#8962;</span><span class="nav-label">Unidades</span></button>
+    <button class="nav-btn" id="nav-licencas"  onclick="go('licencas',this)"><span class="nav-ico">&#8801;</span><span class="nav-label">Licen&ccedil;as</span><span class="nav-badge r">2</span></button>
+
+    <div class="nav-div"></div>
+    <button class="nav-btn" id="nav-certificados" onclick="go('certificados',this)"><span class="nav-ico">&#10022;</span><span class="nav-label">Certificados</span></button>
+    <button class="nav-btn" id="nav-cobertura"    onclick="go('cobertura',this)"><span class="nav-ico">&#9680;</span><span class="nav-label">Cobertura</span></button>
+    <button class="nav-btn" id="nav-mapa"         onclick="go('mapa',this)"><span class="nav-ico">&#11041;</span><span class="nav-label">Mapa</span></button>
+
+    <div class="nav-sec">Relat&oacute;rios</div>
+    <button class="nav-btn" id="nav-exports" onclick="go('exports',this)"><span class="nav-ico">&#8593;</span><span class="nav-label">Exporta&ccedil;&otilde;es</span></button>
+    <button class="nav-btn" id="nav-api"     onclick="go('api',this)"><span class="nav-ico">{}</span><span class="nav-label">API / Integra&ccedil;&otilde;es</span></button>
+  </nav>
+
+  <div class="sb-foot">
+    <div class="sb-av" id="sb-av">MA</div>
+    <div>
+      <div class="sb-fn" id="sb-fn">Maria Alves</div>
+      <div class="sb-fr" id="sb-fr">Gestora Corporativa</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <button class="burger" onclick="toggleSb()"><span></span><span></span><span></span></button>
+    <div class="topbar-title" id="topbar-title">Vis&atilde;o Geral</div>
+    <div class="topbar-acts" id="topbar-acts"></div>
+  </header>
+
+  <!-- VISÃO GERAL -->
+  <div class="page on" id="page-visao">
+    <div class="pg">
+      <div class="summary-grid">
+        <div class="sc" onclick="go('lotes',document.getElementById('nav-lotes'))">
+          <div class="sc-num b" id="d-lotes-ativos">5</div>
+          <div class="sc-label">Lotes em andamento</div>
+          <div class="sc-sub" id="d-lotes-sub">2 aguardando CDF</div>
+        </div>
+        <div class="sc" onclick="go('pendencias',document.getElementById('nav-pendencias'))">
+          <div class="sc-num r" id="d-pend">6</div>
+          <div class="sc-label">Pend&ecirc;ncias ativas</div>
+          <div class="sc-sub" id="d-pend-sub">2 alta severidade</div>
+        </div>
+        <div class="sc" onclick="go('cobertura',document.getElementById('nav-cobertura'))">
+          <div class="sc-num g" id="d-cob">82%</div>
+          <div class="sc-label">Cobertura de compliance</div>
+          <div class="sc-sub" id="d-cob-sub">grupo consolidado</div>
+        </div>
+        <div class="sc" onclick="go('licencas',document.getElementById('nav-licencas'))">
+          <div class="sc-num a" id="d-lic">3</div>
+          <div class="sc-label">Licen&ccedil;as cr&iacute;ticas</div>
+          <div class="sc-sub">1 vencida &middot; 2 vencendo</div>
+        </div>
+      </div>
+
+      <div id="d-alerts-container"></div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Lotes em andamento</div>
+          <button class="btn btn-s btn-sm" onclick="go('lotes',document.getElementById('nav-lotes'))">Ver todos</button>
+        </div>
+        <div class="lote-list" id="d-lotes-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Parceiros com risco documental</div></div>
+        <div>
+          <div class="ev-row">
+            <div class="ev-icon" style="background:var(--amb-bg);border-color:var(--amb-bd);color:var(--amber);font-size:13px">&#9697;</div>
+            <div>
+              <div class="ev-name">EcoTrans Res&iacute;duos Ltda</div>
+              <div class="ev-meta">LO-RJ-7701 &middot; vence em 12 dias &middot; Aptid&atilde;o baseada em 2 documentos</div>
+            </div>
+            <div class="ev-right">
+              <span class="badge warn nd">12 dias</span>
+              <button class="btn btn-s btn-sm" onclick="go('documentacoes',document.getElementById('nav-documentacoes'))">Docs</button>
+            </div>
+          </div>
+          <div class="ev-row" style="border-bottom:none">
+            <div class="ev-icon" style="background:var(--amb-bg);border-color:var(--amb-bd);color:var(--amber);font-size:13px">&#9672;</div>
+            <div>
+              <div class="ev-name">EcoDestino Tratamento S.A.</div>
+              <div class="ev-meta">LO-MG-4412 &middot; vence em 25 dias &middot; Aptid&atilde;o baseada em 3 documentos</div>
+            </div>
+            <div class="ev-right">
+              <span class="badge warn nd">25 dias</span>
+              <button class="btn btn-s btn-sm" onclick="go('documentacoes',document.getElementById('nav-documentacoes'))">Docs</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLUXO DE LOTES -->
+  <div class="page" id="page-lotes">
+    <div class="pg">
+      <div class="fbar">
+        <input class="fi" type="text" placeholder="Buscar lote..."/>
+        <select class="fs"><option value="">Unidade</option><option>Campinas</option><option>Rio de Janeiro</option><option>Belo Horizonte</option><option>Porto Alegre</option><option>Fortaleza</option></select>
+        <select class="fs"><option value="">Etapa</option><option>Rascunho</option><option>MTR pendente</option><option>Em transporte</option><option>Aguardando CDF</option><option>Conclu&iacute;do</option><option>Divergente</option></select>
+      </div>
+      <div class="lote-list">
+        <div class="lote-card err" onclick="openLote('lote-476')">
+          <div class="lote-header">
+            <span class="lote-num">#004476</span>
+            <span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301</span>
+            <span class="badge err nd">Diverg&ecirc;ncia</span>
+            <button class="btn btn-r btn-sm" onclick="event.stopPropagation();openLote('lote-476')">Resolver</button>
+          </div>
+          <div class="lote-meta"><span>&#8962; Rio de Janeiro</span><span>&#9697; EcoTrans</span><span>&#9672; EcoDestino</span><span>500 kg</span></div>
+          <div class="stepper">
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">NF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">MTR</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Transporte</div></div>
+            <div class="step block"><div class="step-dot">!</div><div class="step-lbl">CDF</div></div>
+            <div class="step"><div class="step-dot">&mdash;</div><div class="step-lbl">Encerrado</div></div>
+          </div>
+        </div>
+        <div class="lote-card warn" onclick="openLote('lote-479')">
+          <div class="lote-header">
+            <span class="lote-num">#004479</span>
+            <span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301</span>
+            <span class="badge warn nd">Rascunho auto</span>
+            <button class="btn btn-p btn-sm" onclick="event.stopPropagation();simMTR()">Emitir MTR</button>
+          </div>
+          <div class="lote-meta"><span>&#8962; Fortaleza</span><span style="color:var(--text3)">Transportador n&atilde;o definido</span></div>
+          <div class="stepper">
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">NF</div></div>
+            <div class="step active"><div class="step-dot">2</div><div class="step-lbl">MTR</div></div>
+            <div class="step"><div class="step-dot">3</div><div class="step-lbl">Transporte</div></div>
+            <div class="step"><div class="step-dot">4</div><div class="step-lbl">CDF</div></div>
+            <div class="step"><div class="step-dot">5</div><div class="step-lbl">Encerrado</div></div>
+          </div>
+        </div>
+        <div class="lote-card warn" onclick="openLote('lote-478')">
+          <div class="lote-header">
+            <span class="lote-num">#004478</span>
+            <span class="lote-name">Res&iacute;duos Met&aacute;licos &middot; 1101</span>
+            <span class="badge warn pulse nd">Aguardando CDF</span>
+            <button class="btn btn-s btn-sm" onclick="event.stopPropagation();openLote('lote-478')">Ver</button>
+          </div>
+          <div class="lote-meta"><span>&#8962; Belo Horizonte</span><span>&#9697; EcoTrans</span><span>&#9672; EcoDestino</span><span>2.100 kg</span></div>
+          <div class="stepper">
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">NF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">MTR</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Transporte</div></div>
+            <div class="step active"><div class="step-dot">4</div><div class="step-lbl">CDF</div></div>
+            <div class="step"><div class="step-dot">5</div><div class="step-lbl">Encerrado</div></div>
+          </div>
+        </div>
+        <div class="lote-card ok" onclick="openLote('lote-473')">
+          <div class="lote-header">
+            <span class="lote-num">#004473</span>
+            <span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301</span>
+            <span class="badge ok nd">Conclu&iacute;do</span>
+            <button class="btn btn-s btn-sm" onclick="event.stopPropagation();openLote('lote-473')">Certificado</button>
+          </div>
+          <div class="lote-meta"><span>&#8962; Campinas</span><span>&#9697; Transcol</span><span>&#9672; EcoDestino</span><span>800 kg</span></div>
+          <div class="stepper">
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">NF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">MTR</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Transporte</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">CDF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Encerrado</div></div>
+          </div>
+        </div>
+        <div class="lote-card ok" onclick="openLote('lote-471')">
+          <div class="lote-header">
+            <span class="lote-num">#004471</span>
+            <span class="lote-name">Res&iacute;duos Met&aacute;licos &middot; 1101</span>
+            <span class="badge ok nd">Conclu&iacute;do</span>
+            <button class="btn btn-s btn-sm" onclick="event.stopPropagation();openLote('lote-471')">Certificado</button>
+          </div>
+          <div class="lote-meta"><span>&#8962; Belo Horizonte</span><span>&#9697; Transcol</span><span>&#9672; EcoDestino</span><span>3.400 kg</span></div>
+          <div class="stepper">
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">NF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">MTR</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Transporte</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">CDF</div></div>
+            <div class="step done"><div class="step-dot">&#10003;</div><div class="step-lbl">Encerrado</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INGESTÃO -->
+  <div class="page" id="page-ingestao">
+    <div class="pg">
+      <div class="upl" id="upl-zone" onclick="simUpload()">
+        <div style="font-size:24px;margin-bottom:6px;color:var(--text3)">&#8679;</div>
+        <div class="upl-t">Arraste arquivos ou clique para selecionar</div>
+        <div class="upl-s">PDF &middot; XML &middot; E-mail &middot; API &mdash; o sistema classifica e reconhece tipo e for&ccedil;a regulat&oacute;ria automaticamente</div>
+      </div>
+      <div id="upl-proc" style="display:none;margin-bottom:14px;">
+        <div class="plog">
+          <div class="plog-t">Processando entrada</div>
+          <div class="plog-r" id="pl1"><div class="plog-d act"></div><div class="plog-tx act">Criando registro na fila...</div></div>
+          <div class="plog-r" id="pl2" style="opacity:.3"><div class="plog-d pend"></div><div class="plog-tx">Classificando tipo e for&ccedil;a regulat&oacute;ria...</div></div>
+          <div class="plog-r" id="pl3" style="opacity:.3"><div class="plog-d pend"></div><div class="plog-tx">Extraindo CNPJs e metadados...</div></div>
+          <div class="plog-r" id="pl4" style="opacity:.3"><div class="plog-d pend"></div><div class="plog-tx">Calculando score de associa&ccedil;&atilde;o...</div></div>
+          <div class="plog-r" id="pl5" style="opacity:.3"><div class="plog-d pend"></div><div class="plog-tx">Criando v&iacute;nculo e atualizando fluxo do lote...</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Evid&ecirc;ncias fortes</div>
+          <div style="font-size:11px;color:var(--text3)">MTR &middot; NF &middot; CDF &middot; Licen&ccedil;a oficial &middot; XML &middot; Integra&ccedil;&atilde;o</div>
+        </div>
+        <div>
+          <div class="ev-row">
+            <div class="ev-icon strong">&#9998;</div>
+            <div><div class="ev-name">CDF-SP-2026-113002.pdf</div><div class="ev-meta">CDF &middot; e-mail &middot; 03/04 14:22 &middot; <span class="slabel strong">Evid&ecirc;ncia forte</span></div></div>
+            <div class="ev-right"><span class="badge ok nd" style="font-family:'Geist Mono',monospace;font-size:10px">98%</span><span class="badge ok nd">Vinculado</span><button class="btn btn-s btn-sm" onclick="openDw('dw-i1')">Ver</button></div>
+          </div>
+          <div class="ev-row">
+            <div class="ev-icon strong">&#9998;</div>
+            <div><div class="ev-name">CDF-MG-2026-089441.pdf</div><div class="ev-meta">CDF &middot; upload &middot; 03/04 11:10 &middot; <span class="slabel strong">Evid&ecirc;ncia forte</span></div></div>
+            <div class="ev-right"><span class="badge warn nd" style="font-family:'Geist Mono',monospace;font-size:10px">82%</span><span class="badge warn nd">Revisar</span><button class="btn btn-p btn-sm" onclick="openDw('dw-i2')">Confirmar</button></div>
+          </div>
+          <div class="ev-row">
+            <div class="ev-icon strong" style="background:var(--red-bg);border-color:var(--red-bd);color:var(--red)">!</div>
+            <div><div class="ev-name">CDF-RJ-2026-071204.pdf</div><div class="ev-meta">CDF &middot; e-mail &middot; 03/04 10:00 &middot; <span class="slabel strong">Evid&ecirc;ncia forte</span></div></div>
+            <div class="ev-right"><span class="badge err nd">Diverg&ecirc;ncia</span><button class="btn btn-r btn-sm" onclick="openDw('dw-i3')">Analisar</button></div>
+          </div>
+          <div class="ev-row" style="border-bottom:none">
+            <div class="ev-icon strong">&#9998;</div>
+            <div><div class="ev-name">NF-e-004475.pdf</div><div class="ev-meta">NF &middot; upload &middot; 03/04 07:28 &middot; <span class="slabel strong">Evid&ecirc;ncia forte</span></div></div>
+            <div class="ev-right"><span class="badge warn nd">Lote criado</span><button class="btn btn-s btn-sm" onclick="openDw('dw-i5')">Ver</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Entradas auxiliares</div>
+          <div style="font-size:11px;color:var(--text3)">Excel &middot; CSV &middot; Manual &mdash; reconcilia&ccedil;&atilde;o</div>
+        </div>
+        <div class="alert b" style="margin-bottom:14px">
+          <strong>Dado auxiliar &mdash; n&atilde;o equivale a evid&ecirc;ncia forte</strong>
+          Planilhas e CSVs calculam gaps de rastreabilidade. N&atilde;o encerram lotes nem emitem certificados.
+        </div>
+        <div class="ev-row" style="border-bottom:none">
+          <div class="ev-icon weak">&#8942;</div>
+          <div><div class="ev-name">controle_abril.xlsx</div><div class="ev-meta">Planilha interna &middot; upload &middot; 03/04 &middot; <span class="slabel weak">Auxiliar</span> &middot; 32/47 linhas reconciliadas</div></div>
+          <div class="ev-right"><span class="badge blue nd">Reconcilia&ccedil;&atilde;o</span><button class="btn btn-s btn-sm" onclick="openDw('dw-i4')">Ver gaps</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENDÊNCIAS -->
+  <div class="page" id="page-pendencias">
+    <div class="pg">
+      <div class="fbar">
+        <input class="fi" type="text" placeholder="Buscar..." id="pend-s" oninput="filtPend()"/>
+        <select class="fs" id="pend-sev" onchange="filtPend()"><option value="">Severidade</option><option value="alta">Alta</option><option value="media">M&eacute;dia</option><option value="baixa">Baixa</option></select>
+        <select class="fs" id="pend-tp" onchange="filtPend()"><option value="">Tipo</option><option value="licenca">Licen&ccedil;a</option><option value="divergencia">Diverg&ecirc;ncia</option><option value="cdf">CDF ausente</option><option value="parceiro">Parceiro</option><option value="gap">Gap</option></select>
+        <span class="fcount" id="pend-cnt">6 pend&ecirc;ncias</span>
+      </div>
+      <div class="card">
+        <div id="pend-list">
+          <div class="pend-item" data-sev="alta" data-tp="licenca" onclick="openDw('dw-pend-poa')">
+            <div class="pend-sev high"></div>
+            <div class="pend-body"><div class="pend-title">Unidade bloqueada &mdash; Porto Alegre</div><div class="pend-meta">LI-RS-991 vencida &middot; bloqueada = true &middot; Nenhum lote pode ser criado</div></div>
+            <div class="pend-right"><span class="badge err nd">Alta</span><button class="btn btn-r btn-sm" onclick="event.stopPropagation();openDw('dw-pend-poa')">Resolver</button></div>
+          </div>
+          <div class="pend-item" data-sev="alta" data-tp="divergencia" onclick="openDw('dw-pend-div')">
+            <div class="pend-sev high"></div>
+            <div class="pend-body"><div class="pend-title">Diverg&ecirc;ncia de destinador &mdash; Lote #004476</div><div class="pend-meta">CDF emitido por destinador diferente &middot; Poss&iacute;vel subdestina&ccedil;&atilde;o &middot; Rio de Janeiro</div></div>
+            <div class="pend-right"><span class="badge err nd">Alta</span><button class="btn btn-r btn-sm" onclick="event.stopPropagation();openDw('dw-pend-div')">Analisar</button></div>
+          </div>
+          <div class="pend-item" data-sev="media" data-tp="licenca" onclick="openDw('dw-pend-rj')">
+            <div class="pend-sev mid"></div>
+            <div class="pend-body"><div class="pend-title">Licen&ccedil;a pr&oacute;xima do vencimento &mdash; Rio de Janeiro</div><div class="pend-meta">LO-RJ-8812 &middot; INEA-RJ &middot; 16 dias &middot; Escalar&aacute; para Alta em 7 dias</div></div>
+            <div class="pend-right"><span class="badge warn nd">M&eacute;dia</span><button class="btn btn-s btn-sm" onclick="event.stopPropagation();openDw('dw-pend-rj')">Ver</button></div>
+          </div>
+          <div class="pend-item" data-sev="media" data-tp="parceiro">
+            <div class="pend-sev mid"></div>
+            <div class="pend-body"><div class="pend-title">Aptid&atilde;o em risco &mdash; EcoTrans Res&iacute;duos</div><div class="pend-meta">LO-RJ-7701 vence em 12 dias &middot; Parceiro ficar&aacute; inapto &middot; 2 lotes ativos usam este transportador</div></div>
+            <div class="pend-right"><span class="badge warn nd">M&eacute;dia</span><button class="btn btn-s btn-sm" onclick="go('documentacoes',document.getElementById('nav-documentacoes'))">Ver docs</button></div>
+          </div>
+          <div class="pend-item" data-sev="media" data-tp="cdf">
+            <div class="pend-sev mid"></div>
+            <div class="pend-body"><div class="pend-title">CDF ausente &mdash; Lote #004478 (5 dias)</div><div class="pend-meta">Aguardando CDF &middot; Belo Horizonte &middot; Monitor ativo a cada 4h</div></div>
+            <div class="pend-right"><span class="badge warn nd">M&eacute;dia</span><button class="btn btn-s btn-sm" onclick="openLote('lote-478')">Ver lote</button></div>
+          </div>
+          <div class="pend-item" data-sev="baixa" data-tp="gap" style="border-bottom:none">
+            <div class="pend-sev low"></div>
+            <div class="pend-body"><div class="pend-title">Gap de rastreabilidade &mdash; Campinas &middot; Mar/26</div><div class="pend-meta">controle_abril.xlsx indica 15 linhas sem correspond&ecirc;ncia</div></div>
+            <div class="pend-right"><span class="badge blue nd">Baixa</span><button class="btn btn-s btn-sm">Ver</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSPORTADORES -->
+  <div class="page" id="page-transportadores">
+    <div class="pg">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">Cadastrar transportador</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;margin-bottom:10px;font-size:12px;color:var(--text3);">
+          Simule: <button onclick="usarCNPJ('tp','12.345.678/0001-90')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;font-weight:500;margin-left:4px">Regular</button>
+          &middot; <button onclick="usarCNPJ('tp','98.765.432/0001-10')" style="background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;font-weight:500;">Irregular</button>
+        </div>
+        <div class="cnpj-row">
+          <input class="fi" id="tp-cnpj" placeholder="00.000.000/0001-00" maxlength="18" inputmode="numeric" oninput="fmtC(this,'tp')"/>
+          <button class="fbtn" id="tp-btn" onclick="buscar('tp')" disabled><div class="spin" id="tp-spin"></div><span id="tp-bt">Buscar no SINIR</span></button>
+          <button class="fbtn" onclick="openDw('dw-manual-tp')">+ Manual</button>
+        </div>
+        <div class="rb" id="tp-rok" style="border-color:var(--green-bd)">
+          <div class="rb-hd ok"><span class="rb-hl ok">Regular &mdash; apto</span><span class="badge ok nd" style="font-size:10px">ATIVO</span></div>
+          <div class="rb-body"><div class="g2"><div class="gf"><label>Raz&atilde;o Social</label><span id="tp-nome"></span></div><div class="gf"><label>Habilita&ccedil;&atilde;o</label><span id="tp-hab"></span></div></div><div style="margin-top:10px"><button class="btn btn-p btn-sm" id="tp-save" onclick="salvarP('tp')">Salvar transportador</button></div></div>
+        </div>
+        <div class="rb" id="tp-rerr" style="border-color:var(--red-bd)">
+          <div class="rb-hd err"><span class="rb-hl err">Inapto &mdash; bloqueado</span><span class="badge err nd" style="font-size:10px">BLOQUEADO</span></div>
+          <div class="rb-body"><div id="tp-msg" style="font-size:12.5px;color:var(--red)"></div></div>
+        </div>
+        <div id="tp-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Cadastrado</h4><p>Monitoramento di&aacute;rio &agrave;s 03:00 ativado.</p></div></div>
+      </div>
+
+      <div class="fbar"><input class="fi" type="text" placeholder="Buscar transportador..."/></div>
+
+      <div class="partner-card" onclick="openDw('dw-tp-transcol')">
+        <div class="pc-hd">
+          <div class="pc-ico">&#9697;</div>
+          <div><div class="pc-name">Transcol Log&iacute;stica Ambiental</div><div class="pc-cnpj">12.345.678/0001-90 &middot; SP</div></div>
+          <div class="pc-status"><span class="badge ok nd">Apto</span></div>
+        </div>
+        <div class="pc-body">
+          <div class="apt-row"><span class="apt-key">Habilita&ccedil;&atilde;o</span><span class="apt-val">Res&iacute;duos Classe I e II</span></div>
+          <div class="apt-row"><span class="apt-key">UFs autorizadas</span><span class="apt-val">SP, RJ, MG, ES</span></div>
+          <div class="apt-row"><span class="apt-key">Aptid&atilde;o derivada de</span><span class="apt-val" style="color:var(--text3);font-style:italic">3 documentos v&aacute;lidos &middot; &uacute;lt. leitura 03/04</span></div>
+        </div>
+        <div class="pc-footer">
+          <span class="apt-chip ok">&#10003; Cl. I e II</span>
+          <span class="apt-chip ok">&#10003; Licen&ccedil;a v&aacute;lida</span>
+          <span class="apt-chip ok">&#10003; SINIR ativo</span>
+          <a class="pc-doc-link" onclick="event.stopPropagation();go('documentacoes',document.getElementById('nav-documentacoes'))">Ver documentos &#8594;</a>
+        </div>
+      </div>
+
+      <div class="partner-card" onclick="openDw('dw-tp-ecotrans')">
+        <div class="pc-hd">
+          <div class="pc-ico" style="background:var(--amb-bg);border-color:var(--amb-bd)">&#9697;</div>
+          <div><div class="pc-name">EcoTrans Res&iacute;duos Ltda</div><div class="pc-cnpj">55.666.777/0001-88 &middot; RJ</div></div>
+          <div class="pc-status"><span class="badge warn nd">Risco</span></div>
+        </div>
+        <div class="pc-body">
+          <div class="apt-row"><span class="apt-key">Habilita&ccedil;&atilde;o</span><span class="apt-val">Res&iacute;duos Classe I e II</span></div>
+          <div class="apt-row"><span class="apt-key">UFs autorizadas</span><span class="apt-val">RJ, ES</span></div>
+          <div class="apt-row"><span class="apt-key">Aptid&atilde;o derivada de</span><span class="apt-val" style="color:var(--amber);font-style:italic">2 documentos &middot; 1 vencendo em 12 dias</span></div>
+        </div>
+        <div class="pc-footer">
+          <span class="apt-chip ok">&#10003; Cl. I e II</span>
+          <span class="apt-chip warn">&#9888; Licen&ccedil;a vencendo</span>
+          <span class="apt-chip warn">&#9888; SINIR vencendo</span>
+          <a class="pc-doc-link" onclick="event.stopPropagation();go('documentacoes',document.getElementById('nav-documentacoes'))">Ver documentos &#8594;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESTINADORES -->
+  <div class="page" id="page-destinadores">
+    <div class="pg">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">Cadastrar destinador</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;margin-bottom:10px;font-size:12px;color:var(--text3);">
+          Simule: <button onclick="usarCNPJ('dt','11.222.333/0001-44')" style="background:none;border:none;color:var(--amber);font-size:12px;cursor:pointer;font-weight:500;margin-left:4px">Lic. vencendo</button>
+          &middot; <button onclick="usarCNPJ('dt','12.345.678/0001-90')" style="background:none;border:none;color:var(--green);font-size:12px;cursor:pointer;font-weight:500;">Regular</button>
+        </div>
+        <div class="cnpj-row">
+          <input class="fi" id="dt-cnpj" placeholder="00.000.000/0001-00" maxlength="18" inputmode="numeric" oninput="fmtC(this,'dt')"/>
+          <button class="fbtn" id="dt-btn" onclick="buscar('dt')" disabled><div class="spin" id="dt-spin"></div><span id="dt-bt">Buscar no SINIR</span></button>
+          <button class="fbtn" onclick="openDw('dw-manual-dt')">+ Manual</button>
+        </div>
+        <div class="rb" id="dt-rok" style="border-color:var(--green-bd)">
+          <div class="rb-hd ok"><span class="rb-hl ok">Regular &mdash; apto</span><span class="badge ok nd" style="font-size:10px">ATIVO</span></div>
+          <div class="rb-body"><div class="g2"><div class="gf"><label>Raz&atilde;o Social</label><span id="dt-nome"></span></div><div class="gf"><label>Habilita&ccedil;&atilde;o</label><span id="dt-hab"></span></div></div><div style="margin-top:10px"><button class="btn btn-p btn-sm" id="dt-save" onclick="salvarP('dt')">Salvar destinador</button></div></div>
+        </div>
+        <div class="rb" id="dt-rwarn" style="border-color:var(--amb-bd)">
+          <div class="rb-hd warn"><span class="rb-hl warn">Licen&ccedil;a vencendo</span><span class="badge warn nd" style="font-size:10px">ATEN&Ccedil;&Atilde;O</span></div>
+          <div class="rb-body"><div class="g2"><div class="gf"><label>Raz&atilde;o Social</label><span id="dt-wn"></span></div><div class="gf"><label>Vencimento</label><span id="dt-wv" style="color:var(--amber)"></span></div></div><div style="margin-top:10px"><button class="btn btn-s btn-sm" id="dt-save2" onclick="salvarP('dt')">Salvar mesmo assim</button></div></div>
+        </div>
+        <div id="dt-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Cadastrado</h4><p>Monitoramento ativado.</p></div></div>
+      </div>
+
+      <div class="fbar"><input class="fi" type="text" placeholder="Buscar destinador..."/></div>
+
+      <div class="partner-card">
+        <div class="pc-hd">
+          <div class="pc-ico" style="background:var(--amb-bg);border-color:var(--amb-bd)">&#9672;</div>
+          <div><div class="pc-name">EcoDestino Tratamento S.A.</div><div class="pc-cnpj">11.222.333/0001-44 &middot; MG</div></div>
+          <div class="pc-status"><span class="badge warn nd">Risco</span></div>
+        </div>
+        <div class="pc-body">
+          <div class="apt-row"><span class="apt-key">Tecnologia</span><span class="apt-val">Coprocessamento</span></div>
+          <div class="apt-row"><span class="apt-key">Classes aptas</span><span class="apt-val">Cl. I &mdash; c&oacute;digos 1101, 1301, 1401</span></div>
+          <div class="apt-row"><span class="apt-key">Aptid&atilde;o derivada de</span><span class="apt-val" style="color:var(--amber);font-style:italic">3 documentos &middot; 1 vencendo em 25 dias</span></div>
+        </div>
+        <div class="pc-footer">
+          <span class="apt-chip ok">&#10003; Coprocessamento</span>
+          <span class="apt-chip ok">&#10003; Cl. I</span>
+          <span class="apt-chip warn">&#9888; Licen&ccedil;a vencendo</span>
+          <a class="pc-doc-link" onclick="event.stopPropagation();go('documentacoes',document.getElementById('nav-documentacoes'))">Ver documentos &#8594;</a>
+        </div>
+      </div>
+
+      <div class="partner-card">
+        <div class="pc-hd">
+          <div class="pc-ico">&#9672;</div>
+          <div><div class="pc-name">Cimento Verde</div><div class="pc-cnpj">44.555.666/0001-22 &middot; SP</div></div>
+          <div class="pc-status"><span class="badge ok nd">Apto</span></div>
+        </div>
+        <div class="pc-body">
+          <div class="apt-row"><span class="apt-key">Tecnologia</span><span class="apt-val">Coprocessamento</span></div>
+          <div class="apt-row"><span class="apt-key">Classes aptas</span><span class="apt-val">Cl. I e II &mdash; 1101, 1301, 1401, 1402</span></div>
+          <div class="apt-row"><span class="apt-key">Aptid&atilde;o derivada de</span><span class="apt-val" style="color:var(--text3);font-style:italic">4 documentos v&aacute;lidos &middot; &uacute;lt. leitura 01/04</span></div>
+        </div>
+        <div class="pc-footer">
+          <span class="apt-chip ok">&#10003; Coprocessamento</span>
+          <span class="apt-chip ok">&#10003; Cl. I e II</span>
+          <span class="apt-chip ok">&#10003; Licen&ccedil;a v&aacute;lida</span>
+          <a class="pc-doc-link" onclick="event.stopPropagation();go('documentacoes',document.getElementById('nav-documentacoes'))">Ver documentos &#8594;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DOCUMENTAÇÕES DOS PARCEIROS ═══ -->
+  <div class="page" id="page-documentacoes">
+    <div class="pg">
+      <div class="alert n" style="margin-bottom:16px">
+        <strong>Camada documental regulat&oacute;ria</strong>
+        Esta p&aacute;gina mostra como a aptid&atilde;o de cada parceiro &eacute; constru&iacute;da: documento &rarr; leitura autom&aacute;tica &rarr; extra&ccedil;&atilde;o &rarr; valida&ccedil;&atilde;o &rarr; aptid&atilde;o operacional.
+      </div>
+
+      <div class="fbar">
+        <input class="fi" type="text" placeholder="Buscar parceiro ou documento..." id="doc-s" oninput="filtDocs()"/>
+        <select class="fs" id="doc-parceiro" onchange="filtDocs()">
+          <option value="">Todos os parceiros</option>
+          <option value="transcol">Transcol</option>
+          <option value="ecotrans">EcoTrans</option>
+          <option value="ecodestino">EcoDestino</option>
+          <option value="cimento">Cimento Verde</option>
+        </select>
+        <select class="fs" id="doc-status" onchange="filtDocs()">
+          <option value="">Todos os status</option>
+          <option value="valid">V&aacute;lido</option>
+          <option value="expiring">Vencendo</option>
+          <option value="expired">Vencido</option>
+          <option value="partial">Leitura parcial</option>
+        </select>
+        <span class="fcount" id="doc-cnt">8 documentos</span>
+      </div>
+
+      <div class="doc-grid" id="doc-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIDADES -->
+  <div class="page" id="page-unidades">
+    <div class="pg">
+      <div class="tw tws">
+        <table>
+          <thead><tr><th>Unidade</th><th>CNPJ</th><th>UF</th><th>Sistema MTR</th><th>Bloqueada</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr onclick="setCtx('campinas',null);go('visao',document.getElementById('nav-visao'))"><td class="tn">BRK &mdash; Campinas</td><td class="tm">05.437.027/0012</td><td>SP</td><td><span class="badge neu nd">SIGOR-SP</span></td><td class="tm" style="color:var(--text3)">false</td><td><span class="badge ok">Regular</span></td></tr>
+            <tr onclick="setCtx('rj',null);go('visao',document.getElementById('nav-visao'))"><td class="tn">BRK &mdash; Rio de Janeiro</td><td class="tm">05.437.027/0008</td><td>RJ</td><td><span class="badge neu nd">INEA-RJ</span></td><td class="tm" style="color:var(--text3)">false</td><td><span class="badge warn">Aten&ccedil;&atilde;o</span></td></tr>
+            <tr><td class="tn">BRK &mdash; Belo Horizonte</td><td class="tm">05.437.027/0015</td><td>MG</td><td><span class="badge neu nd">MTR-MG</span></td><td class="tm" style="color:var(--text3)">false</td><td><span class="badge ok">Regular</span></td></tr>
+            <tr onclick="setCtx('poa',null);go('visao',document.getElementById('nav-visao'))"><td class="tn">BRK &mdash; Porto Alegre</td><td class="tm">05.437.027/0019</td><td>RS</td><td><span class="badge neu nd">SINIR</span></td><td class="tm" style="color:var(--red);font-weight:600">true</td><td><span class="badge err">Bloqueada</span></td></tr>
+            <tr><td class="tn">BRK &mdash; Fortaleza</td><td class="tm">05.437.027/0023</td><td>CE</td><td><span class="badge neu nd">SINIR</span></td><td class="tm" style="color:var(--text3)">false</td><td><span class="badge ok">Regular</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LICENÇAS -->
+  <div class="page" id="page-licencas">
+    <div class="pg">
+      <div class="fbar">
+        <input class="fi" type="text" placeholder="Buscar licen&ccedil;a..."/>
+        <select class="fs"><option value="">Unidade</option><option>Campinas</option><option>Rio de Janeiro</option><option>Belo Horizonte</option><option>Porto Alegre</option><option>Fortaleza</option></select>
+        <select class="fs"><option value="">Status</option><option>V&aacute;lida</option><option>Vencendo</option><option>Vencida</option></select>
+        <button class="btn btn-s" style="margin-left:auto" onclick="openDw('dw-nova-lic')">+ Adicionar</button>
+      </div>
+      <div class="tw tws">
+        <table>
+          <thead><tr><th>Documento</th><th>Unidade</th><th>&Oacute;rg&atilde;o</th><th>Emiss&atilde;o</th><th>Vencimento</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="tm">LO-2023-4471</td><td>Campinas</td><td>CETESB-SP</td><td class="tm">12/06/2023</td><td class="tm">30/06/2027</td><td><span class="badge ok">V&aacute;lida</span></td></tr>
+            <tr onclick="openDw('dw-lic-rj')"><td class="tm">LO-RJ-8812</td><td>Rio de Janeiro</td><td>INEA-RJ</td><td class="tm">18/04/2024</td><td class="tm">18/04/2026</td><td><span class="badge warn">16 dias</span></td></tr>
+            <tr><td class="tm">LO-MG-3302</td><td>Belo Horizonte</td><td>SEMAD-MG</td><td class="tm">15/11/2023</td><td class="tm">15/11/2027</td><td><span class="badge ok">V&aacute;lida</span></td></tr>
+            <tr onclick="openDw('dw-lic-poa')"><td class="tm">LI-RS-991</td><td>Porto Alegre</td><td>FEPAM-RS</td><td class="tm">01/12/2023</td><td class="tm">01/12/2025</td><td><span class="badge err">Vencida</span></td></tr>
+            <tr><td class="tm">LO-CE-0441</td><td>Fortaleza</td><td>SEMACE</td><td class="tm">22/09/2023</td><td class="tm">22/09/2027</td><td><span class="badge ok">V&aacute;lida</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CERTIFICADOS -->
+  <div class="page" id="page-certificados">
+    <div class="pg">
+      <div class="alert g" style="margin-bottom:16px">
+        <strong>O que &eacute; um certificado Akrantis?</strong>
+        Gerado automaticamente ao concluir NF &rarr; MTR &rarr; CDF &mdash; todos v&aacute;lidos, sem diverg&ecirc;ncias, com parceiros aptos e licen&ccedil;as ativas no momento da opera&ccedil;&atilde;o.
+      </div>
+      <div class="lote-list">
+        <div class="lote-card ok" style="cursor:default">
+          <div class="lote-header"><span class="lote-num">#004473</span><span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301 &middot; Campinas</span><span class="badge ok nd">Certificado</span><button class="btn btn-s btn-sm" onclick="openLote('lote-473')">Ver</button></div>
+          <div class="cert" style="margin-top:12px">
+            <div class="cert-hd">&#10022; Certificado de Rastreabilidade Akrantis</div>
+            <div class="cert-g">
+              <div class="cef"><label>N&ordm;</label><span>AKR-2026-004473</span></div>
+              <div class="cef"><label>Data</label><span>03/04/2026</span></div>
+              <div class="cef"><label>MTR</label><span style="font-family:'Geist Mono',monospace;font-size:11px">SP-2026-0044720</span></div>
+              <div class="cef"><label>CDF</label><span style="font-family:'Geist Mono',monospace;font-size:11px">SP-CDF-2026-113002</span></div>
+            </div>
+            <div class="cert-foot">&#10003; Cadeia completa verificada &middot; Gerado automaticamente</div>
+          </div>
+        </div>
+        <div class="lote-card ok" style="cursor:default">
+          <div class="lote-header"><span class="lote-num">#004471</span><span class="lote-name">Res&iacute;duos Met&aacute;licos &middot; 1101 &middot; Belo Horizonte</span><span class="badge ok nd">Certificado</span><button class="btn btn-s btn-sm" onclick="openLote('lote-471')">Ver</button></div>
+          <div class="cert" style="margin-top:12px">
+            <div class="cert-hd">&#10022; Certificado de Rastreabilidade Akrantis</div>
+            <div class="cert-g">
+              <div class="cef"><label>N&ordm;</label><span>AKR-2026-004471</span></div>
+              <div class="cef"><label>Data</label><span>01/04/2026</span></div>
+              <div class="cef"><label>MTR</label><span style="font-family:'Geist Mono',monospace;font-size:11px">MG-2026-0041200</span></div>
+              <div class="cef"><label>CDF</label><span style="font-family:'Geist Mono',monospace;font-size:11px">MG-CDF-2026-089100</span></div>
+            </div>
+            <div class="cert-foot">&#10003; Cadeia completa verificada &middot; Gerado automaticamente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COBERTURA -->
+  <div class="page" id="page-cobertura">
+    <div class="pg">
+      <div class="summary-grid">
+        <div class="sc"><div class="sc-num g">82%</div><div class="sc-label">Rastreabilidade</div></div>
+        <div class="sc"><div class="sc-num b">94%</div><div class="sc-label">Docs v&aacute;lidos</div></div>
+        <div class="sc"><div class="sc-num r">1</div><div class="sc-label">Unidade bloqueada</div></div>
+        <div class="sc"><div class="sc-num a">2</div><div class="sc-label">Parceiros em risco</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Rastreabilidade por unidade</div>
+        <div class="cov-row"><div class="cov-l">BRK &mdash; Campinas</div><div class="cov-t"><div class="cov-f h" style="width:82%"></div></div><div class="cov-p" style="color:var(--green)">82%</div></div>
+        <div class="cov-row"><div class="cov-l">BRK &mdash; Rio de Janeiro</div><div class="cov-t"><div class="cov-f h" style="width:91%"></div></div><div class="cov-p" style="color:var(--green)">91%</div></div>
+        <div class="cov-row"><div class="cov-l">BRK &mdash; Belo Horizonte</div><div class="cov-t"><div class="cov-f h" style="width:96%"></div></div><div class="cov-p" style="color:var(--green)">96%</div></div>
+        <div class="cov-row"><div class="cov-l">BRK &mdash; Porto Alegre</div><div class="cov-t"><div class="cov-f m" style="width:71%"></div></div><div class="cov-p" style="color:var(--amber)">71%</div></div>
+        <div class="cov-row"><div class="cov-l">BRK &mdash; Fortaleza</div><div class="cov-t"><div class="cov-f h" style="width:88%"></div></div><div class="cov-p" style="color:var(--green)">88%</div></div>
+        <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+          <div class="cov-row"><div class="cov-l" style="font-weight:600;color:var(--text)">Grupo</div><div class="cov-t" style="height:7px"><div class="cov-f h" style="width:82%;background:linear-gradient(90deg,var(--green),#4ade80)"></div></div><div class="cov-p" style="color:var(--green);font-size:13px;font-weight:700">82%</div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;"><button class="btn btn-s">Exportar CSV</button><button class="btn btn-s">Via API</button></div>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div class="page" id="page-mapa">
+    <div class="pg">
+      <div class="map-wrap">
+        <div class="map-c">
+          <div class="mn root" onclick="toggleCtx(event)"><div class="mn-n">BRK Ambiental</div><div class="mn-s">5 unidades</div><span class="badge warn nd" style="margin-top:4px;font-size:10px">82%</span></div>
+          <div class="ml"></div>
+          <div class="mr">
+            <div class="mc"><div class="mn ok" onclick="setCtx('campinas',null);go('visao',document.getElementById('nav-visao'))"><div class="mn-n">Campinas</div><div class="mn-s">SP &middot; 82%</div></div><div class="ml"></div><div class="mr"><div class="mn ok" style="min-width:70px"><div class="mn-n" style="font-size:10.5px">Transcol</div><div class="mn-s">3 docs</div></div><div class="mn warn" style="min-width:70px"><div class="mn-n" style="font-size:10.5px">EcoDestino</div><div class="mn-s">25d</div></div></div></div>
+            <div class="mc"><div class="mn warn" onclick="setCtx('rj',null);go('visao',document.getElementById('nav-visao'))"><div class="mn-n">Rio de Jan.</div><div class="mn-s">RJ &middot; 91%</div></div><div class="ml"></div><div class="mr"><div class="mn warn" style="min-width:70px"><div class="mn-n" style="font-size:10.5px">EcoTrans</div><div class="mn-s">12d</div></div><div class="mn ok" style="min-width:70px"><div class="mn-n" style="font-size:10.5px">Cim. Verde</div><div class="mn-s">4 docs</div></div></div></div>
+            <div class="mc"><div class="mn ok" onclick="setCtx('bh',null);go('visao',document.getElementById('nav-visao'))"><div class="mn-n">Belo Hor.</div><div class="mn-s">MG &middot; 96%</div></div></div>
+            <div class="mc"><div class="mn err" onclick="setCtx('poa',null);go('visao',document.getElementById('nav-visao'))"><div class="mn-n">Porto Alegre</div><div class="mn-s">RS &middot; bloqueada</div></div></div>
+            <div class="mc"><div class="mn ok" onclick="setCtx('for',null);go('visao',document.getElementById('nav-visao'))"><div class="mn-n">Fortaleza</div><div class="mn-s">CE &middot; 88%</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORTAÇÕES -->
+  <div class="page" id="page-exports">
+    <div class="pg">
+      <div class="tw tws">
+        <table>
+          <thead><tr><th>Relat&oacute;rio</th><th>Escopo</th><th>Per&iacute;odo</th><th>Formato</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="tn">Invent&aacute;rio de Res&iacute;duos</td><td>Grupo</td><td>Mar&ccedil;o/2026</td><td>CSV</td><td><button class="btn btn-s btn-sm">Exportar</button></td></tr>
+            <tr><td class="tn">Conformidade &mdash; Q1 2026</td><td>Grupo</td><td>Jan&ndash;Mar 2026</td><td>CSV</td><td><button class="btn btn-s btn-sm">Exportar</button></td></tr>
+            <tr><td class="tn">Aptid&atilde;o de Parceiros</td><td>Grupo</td><td>Atual</td><td>PDF</td><td><button class="btn btn-s btn-sm">Exportar</button></td></tr>
+            <tr><td class="tn">Documentos dos Parceiros</td><td>Grupo</td><td>Mar&ccedil;o/2026</td><td>CSV</td><td><button class="btn btn-s btn-sm">Exportar</button></td></tr>
+            <tr><td class="tn">Trilha de Compliance</td><td>Grupo</td><td>Mar&ccedil;o/2026</td><td>PDF</td><td><button class="btn btn-s btn-sm">Exportar</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- API -->
+  <div class="page" id="page-api">
+    <div class="pg">
+      <div class="card">
+        <div class="card-title">Chave de API</div>
+        <div style="display:flex;gap:7px;align-items:center;margin-bottom:8px">
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:7px 11px;font-family:'Geist Mono',monospace;font-size:12px;color:var(--text2)">akr_live_brk_&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;</div>
+          <button class="btn btn-s btn-sm">Revelar</button>
+        </div>
+      </div>
+      <div class="tw tws">
+        <table>
+          <thead><tr><th>M&eacute;todo</th><th>Endpoint</th><th>Descri&ccedil;&atilde;o</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/lotes</td><td>Lista com status de fluxo</td></tr>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/conformidade</td><td>Score + unidades + pend&ecirc;ncias</td></tr>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/parceiros/:id/aptidao</td><td>Aptid&atilde;o atual por res&iacute;duo e UF</td></tr>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/parceiros/:id/documentos</td><td>Documentos do parceiro + leituras</td></tr>
+            <tr><td><span class="badge warn nd">POST</span></td><td class="tm">/v1/documentos/upload</td><td>Ingerir documento de parceiro</td></tr>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/documentos/:id/leitura</td><td>Resultado da leitura autom&aacute;tica</td></tr>
+            <tr><td><span class="badge warn nd">POST</span></td><td class="tm">/v1/ingestao/upload</td><td>Envia evid&ecirc;ncia de lote</td></tr>
+            <tr><td><span class="badge ok nd">GET</span></td><td class="tm">/v1/certificados</td><td>Lotes conclu&iacute;dos com certificado</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- DRAWER -->
+<div class="dw-ov" id="dw-ov" onclick="closeDw()"></div>
+<div class="dw" id="dw">
+  <div class="dw-hd">
+    <div style="flex:1;min-width:0">
+      <div class="dw-title" id="dw-title">Detalhes</div>
+      <div class="dw-sub"   id="dw-sub"></div>
+    </div>
+    <button class="dw-close" onclick="closeDw()">&#10005;</button>
+  </div>
+  <div class="dw-tabs" id="dw-tabs"></div>
+  <div class="dw-body" id="dw-body"></div>
+  <div class="dw-ft"   id="dw-ft"></div>
+</div>
+
+<script>
+// ================================================================
+// DOCUMENT DATA (documentações dos parceiros)
+// ================================================================
+const DOCS_DATA = [
+  {
+    id:'doc-transcol-lo',
+    parceiro:'Transcol Log\u00edstica Ambiental',
+    parceiro_key:'transcol',
+    tipo:'LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o',
+    numero:'LO-SP-9912',
+    orgao:'CETESB-SP',
+    emissao:'15/08/2022',
+    vencimento:'15/08/2027',
+    origem:'upload',
+    status:'valid',
+    impacto:'apto',
+    leitura_pct:100,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Coleta e transporte de res\u00edduos',
+      tecnologia:'Transporte rodoviario',
+      classes:['Classe I', 'Classe II'],
+      ufs:['SP','RJ','MG','ES'],
+      codigos:['0101','0102','1101','1201','1301','1401'],
+      restricoes:'N\u00e3o identificadas',
+      limite:'Sem limite de volume declarado',
+      condicionante:'Motorista com certifica\u00e7\u00e3o MOPP'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'m',restricoes:'h'}
+  },
+  {
+    id:'doc-transcol-cadri',
+    parceiro:'Transcol Log\u00edstica Ambiental',
+    parceiro_key:'transcol',
+    tipo:'CADRI',
+    numero:'CADRI-SP-2024-881',
+    orgao:'CETESB-SP',
+    emissao:'10/01/2024',
+    vencimento:'10/01/2026',
+    origem:'integracao',
+    status:'expiring',
+    impacto:'risco',
+    leitura_pct:95,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Certificado de movimenta\u00e7\u00e3o de res\u00edduos',
+      tecnologia:'N/A',
+      classes:['Classe I'],
+      ufs:['SP'],
+      codigos:['1301','1401'],
+      restricoes:'Validade restrita &agrave; UF SP',
+      limite:'M\u00e1x. 200t por expedi\u00e7\u00e3o',
+      condicionante:'Necessita renova\u00e7\u00e3o em 45 dias'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'h',restricoes:'m'}
+  },
+  {
+    id:'doc-transcol-sinir',
+    parceiro:'Transcol Log\u00edstica Ambiental',
+    parceiro_key:'transcol',
+    tipo:'Habilita\u00e7\u00e3o SINIR',
+    numero:'SINIR-00482910',
+    orgao:'IBAMA / MMA',
+    emissao:'01/03/2024',
+    vencimento:'01/03/2026',
+    origem:'integracao',
+    status:'valid',
+    impacto:'apto',
+    leitura_pct:100,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Habilita\u00e7\u00e3o federal para transporte de res\u00edduos',
+      tecnologia:'Transporte rodoviario',
+      classes:['Classe I', 'Classe II'],
+      ufs:['Nacional'],
+      codigos:['Todos os c\u00f3digos habilitados'],
+      restricoes:'N\u00e3o identificadas',
+      limite:'N/A',
+      condicionante:'N/A'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'h',restricoes:'h'}
+  },
+  {
+    id:'doc-ecotrans-lo',
+    parceiro:'EcoTrans Res\u00edduos Ltda',
+    parceiro_key:'ecotrans',
+    tipo:'LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o',
+    numero:'LO-RJ-7701',
+    orgao:'INEA-RJ',
+    emissao:'15/04/2024',
+    vencimento:'15/04/2026',
+    origem:'upload',
+    status:'expiring',
+    impacto:'risco',
+    leitura_pct:98,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Coleta e transporte de res\u00edduos industriais',
+      tecnologia:'Transporte rodoviario',
+      classes:['Classe I', 'Classe II'],
+      ufs:['RJ','ES'],
+      codigos:['1101','1301','1401'],
+      restricoes:'Restrito \u00e0s UFs RJ e ES',
+      limite:'M\u00e1x. 50t por viagem',
+      condicionante:'Ve\u00edculos com certifica\u00e7\u00e3o IBAMA'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'h',restricoes:'h'}
+  },
+  {
+    id:'doc-ecotrans-sinir',
+    parceiro:'EcoTrans Res\u00edduos Ltda',
+    parceiro_key:'ecotrans',
+    tipo:'Habilita\u00e7\u00e3o SINIR',
+    numero:'SINIR-00391204',
+    orgao:'IBAMA / MMA',
+    emissao:'01/04/2024',
+    vencimento:'01/04/2026',
+    origem:'integracao',
+    status:'expiring',
+    impacto:'risco',
+    leitura_pct:100,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Habilita\u00e7\u00e3o federal transportador',
+      tecnologia:'Transporte rodoviario',
+      classes:['Classe I', 'Classe II'],
+      ufs:['RJ','ES'],
+      codigos:['1101','1301'],
+      restricoes:'Regi&atilde;o Sudeste somente',
+      limite:'N/A',
+      condicionante:'Renovar em 12 dias'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'m',restricoes:'h'}
+  },
+  {
+    id:'doc-ecodestino-lo',
+    parceiro:'EcoDestino Tratamento S.A.',
+    parceiro_key:'ecodestino',
+    tipo:'LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o',
+    numero:'LO-MG-4412',
+    orgao:'SEMAD-MG',
+    emissao:'28/04/2024',
+    vencimento:'28/04/2026',
+    origem:'upload',
+    status:'expiring',
+    impacto:'risco',
+    leitura_pct:92,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Tratamento t\u00e9rmico de res\u00edduos industriais',
+      tecnologia:'Coprocessamento em forno de cimento',
+      classes:['Classe I'],
+      ufs:['MG'],
+      codigos:['1101','1301','1401'],
+      restricoes:'Classe I somente &middot; M\u00e1x. 500t/m\u00eas',
+      limite:'500 toneladas por m\u00eas',
+      condicionante:'Monitoramento de emiss\u00f5es a cada 6 meses'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'h',restricoes:'h'}
+  },
+  {
+    id:'doc-ecodestino-lic-op',
+    parceiro:'EcoDestino Tratamento S.A.',
+    parceiro_key:'ecodestino',
+    tipo:'Autoriza\u00e7\u00e3o Ambiental',
+    numero:'AA-MG-2024-0092',
+    orgao:'SEMAD-MG',
+    emissao:'10/06/2024',
+    vencimento:'10/06/2026',
+    origem:'upload',
+    status:'valid',
+    impacto:'apto',
+    leitura_pct:75,
+    leitura_status:'parcial',
+    extracted:{
+      atividade:'Autoriza\u00e7\u00e3o complementar &mdash; leitura parcial',
+      tecnologia:'Coprocessamento',
+      classes:['Classe I'],
+      ufs:['MG'],
+      codigos:['Leitura incompleta &mdash; revisar'],
+      restricoes:'Poss\u00edvel restri\u00e7\u00e3o por c\u00f3digo n\u00e3o confirmada',
+      limite:'N\u00e3o extra\u00eddo',
+      condicionante:'N\u00e3o extra\u00eddo'
+    },
+    conf:{atividade:'h',classes:'m',ufs:'h',codigos:'l',restricoes:'l'}
+  },
+  {
+    id:'doc-cimento-lo',
+    parceiro:'Cimento Verde',
+    parceiro_key:'cimento',
+    tipo:'LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o',
+    numero:'LO-SP-8801',
+    orgao:'CETESB-SP',
+    emissao:'20/03/2022',
+    vencimento:'20/03/2028',
+    origem:'integracao',
+    status:'valid',
+    impacto:'apto',
+    leitura_pct:100,
+    leitura_status:'completa',
+    extracted:{
+      atividade:'Tratamento t\u00e9rmico e coprocessamento',
+      tecnologia:'Coprocessamento em forno de cimento',
+      classes:['Classe I', 'Classe II'],
+      ufs:['SP'],
+      codigos:['1101','1301','1401','1402','0901'],
+      restricoes:'N\u00e3o identificadas',
+      limite:'1.000 toneladas por m\u00eas',
+      condicionante:'Relat\u00f3rio anual de emiss\u00f5es'
+    },
+    conf:{atividade:'h',classes:'h',ufs:'h',codigos:'h',restricoes:'h'}
+  },
+];
+
+// ================================================================
+// MOCK: analisarDocumento
+// ================================================================
+function analisarDocumento(doc) {
+  return {
+    atividade: doc.extracted.atividade,
+    classes: doc.extracted.classes,
+    uf: doc.extracted.ufs,
+    apto: doc.impacto === 'apto',
+    leitura_completa: doc.leitura_status === 'completa',
+    codigos: doc.extracted.codigos,
+  };
+}
+
+// ================================================================
+// RENDER DOCUMENTAÇÕES PAGE
+// ================================================================
+function renderDocs(filter) {
+  const grid = document.getElementById('doc-grid');
+  if(!grid) return;
+  let docs = DOCS_DATA;
+  if(filter) {
+    const s = (document.getElementById('doc-s')?.value||'').toLowerCase();
+    const p = document.getElementById('doc-parceiro')?.value||'';
+    const st = document.getElementById('doc-status')?.value||'';
+    docs = docs.filter(d => {
+      const matchS = !s || d.parceiro.toLowerCase().includes(s) || d.numero.toLowerCase().includes(s) || d.tipo.toLowerCase().includes(s);
+      const matchP = !p || d.parceiro_key === p;
+      const matchSt = !st || d.status === st;
+      return matchS && matchP && matchSt;
+    });
+  }
+  document.getElementById('doc-cnt').textContent = docs.length + ' documento' + (docs.length!==1?'s':'');
+  grid.innerHTML = docs.map(d => docCardHTML(d)).join('');
+}
+
+function docCardHTML(d) {
+  const statusCls = {valid:'valid',expiring:'expiring',expired:'expired',partial:'partial'}[d.status]||'valid';
+  const statusLabel = {valid:'V&aacute;lido',expiring:'Vencendo',expired:'Vencido',partial:'Leitura parcial'}[d.status]||'V&aacute;lido';
+  const statusBadge = {valid:'ok',expiring:'warn',expired:'err',partial:'blue'}[d.status]||'ok';
+  const impactoLabel = {apto:'Apto',risco:'Risco de inaptid&atilde;o',inapto:'Inapto'}[d.impacto]||'Apto';
+  const origemIcon = d.origem==='integracao'?'&#9654;':'&#8679;';
+  const leituraColor = d.leitura_pct >= 90 ? 'var(--green-mid)' : d.leitura_pct >= 70 ? '#d97706' : 'var(--red)';
+  return `
+  <div class="doc-card ${statusCls}" onclick="openDocDetail('${d.id}')">
+    <div class="doc-header">
+      <div>
+        <div class="doc-partner">${d.parceiro}</div>
+        <div class="doc-type">${d.tipo}</div>
+      </div>
+      <span class="badge ${statusBadge} nd">${statusLabel}</span>
+    </div>
+    <div class="doc-body">
+      <div class="doc-row"><span class="doc-row-l">N&uacute;mero</span><span style="font-family:'Geist Mono',monospace;font-size:11.5px">${d.numero}</span></div>
+      <div class="doc-row"><span class="doc-row-l">&Oacute;rg&atilde;o</span><span>${d.orgao}</span></div>
+      <div class="doc-row"><span class="doc-row-l">Vencimento</span><span style="${d.status==='expiring'?'color:var(--amber);font-weight:600':d.status==='expired'?'color:var(--red);font-weight:600':''}">${d.vencimento}</span></div>
+      <div class="doc-row"><span class="doc-row-l">Leitura</span>
+        <div style="flex:1;display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="height:100%;width:${d.leitura_pct}%;background:${leituraColor};border-radius:2px"></div></div>
+          <span style="font-size:10px;font-family:'Geist Mono',monospace;color:var(--text3)">${d.leitura_pct}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="doc-footer">
+      <span class="doc-impact ${d.impacto}">${impactoLabel}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px">${origemIcon} ${d.origem}</span>
+      <button class="btn btn-s btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openDocDetail('${d.id}')">Ver leitura</button>
+    </div>
+  </div>`;
+}
+
+function filtDocs() { renderDocs(true); }
+
+function openDocDetail(id) {
+  const d = DOCS_DATA.find(x=>x.id===id);
+  if(!d) return;
+  const apt = analisarDocumento(d);
+  const statusLabel = {valid:'V&aacute;lido',expiring:'Vencendo',expired:'Vencido',partial:'Leitura parcial'}[d.status]||'V&aacute;lido';
+  const confLabel = {h:'Alta',m:'M&eacute;dia',l:'Baixa'};
+  const confCls   = {h:'h',m:'m',l:'l'};
+
+  const paneResumo = `
+    <div class="sec-lbl">Identifica\u00e7\u00e3o do documento</div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="gf"><label>Tipo</label><span>${d.tipo}</span></div>
+      <div class="gf"><label>N\u00famero</label><span style="font-family:'Geist Mono',monospace;font-size:12px">${d.numero}</span></div>
+      <div class="gf"><label>\u00d3rg\u00e3o emissor</label><span>${d.orgao}</span></div>
+      <div class="gf"><label>Origem</label><span>${d.origem}</span></div>
+      <div class="gf"><label>Emiss\u00e3o</label><span>${d.emissao}</span></div>
+      <div class="gf"><label>Vencimento</label><span style="${d.status==='expiring'?'color:var(--amber);font-weight:600':d.status==='expired'?'color:var(--red);font-weight:600':''}">${d.vencimento}</span></div>
+    </div>
+    <div class="sec-lbl">Status</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="badge ${{valid:'ok',expiring:'warn',expired:'err',partial:'blue'}[d.status]||'ok'} nd">${statusLabel}</span>
+      <span class="doc-impact ${d.impacto}">${{apto:'Apto',risco:'Risco de inaptid\u00e3o',inapto:'Inapto'}[d.impacto]}</span>
+    </div>
+    <div class="leitura-bar">
+      <div class="leitura-bar-fill-wrap"><div class="leitura-bar-fill" style="width:${d.leitura_pct}%"></div></div>
+      <div class="leitura-bar-label">${d.leitura_pct}% extra\u00eddo &middot; ${d.leitura_status}</div>
+    </div>
+    ${d.leitura_status==='parcial'?`<div class="alert a"><strong>Leitura parcial</strong>Alguns campos n\u00e3o puderam ser extra\u00eddos com confian\u00e7a suficiente. Revise manualmente os campos marcados em vermelho.</div>`:''}`;
+
+  const paneExtracao = `
+    <div class="sec-lbl">Campos extra\u00eddos automaticamente</div>
+    <div class="extracted-field">
+      <span class="ef-key">Atividade</span>
+      <span class="ef-val">${d.extracted.atividade}</span>
+      <span class="ef-conf ${confCls[d.conf.atividade]}">${confLabel[d.conf.atividade]}</span>
+    </div>
+    <div class="extracted-field">
+      <span class="ef-key">Tecnologia</span>
+      <span class="ef-val">${d.extracted.tecnologia}</span>
+      <span class="ef-conf h">Alta</span>
+    </div>
+    <div class="extracted-field">
+      <span class="ef-key">Classes</span>
+      <span class="ef-val">${d.extracted.classes.join(', ')}</span>
+      <span class="ef-conf ${confCls[d.conf.classes]}">${confLabel[d.conf.classes]}</span>
+    </div>
+    <div class="extracted-field">
+      <span class="ef-key">UFs autorizadas</span>
+      <span class="ef-val">${d.extracted.ufs.join(', ')}</span>
+      <span class="ef-conf ${confCls[d.conf.ufs]}">${confLabel[d.conf.ufs]}</span>
+    </div>
+    <div class="extracted-field">
+      <span class="ef-key">C\u00f3digos de res\u00edduos</span>
+      <span class="ef-val">${d.extracted.codigos.join(', ')}</span>
+      <span class="ef-conf ${confCls[d.conf.codigos]}">${confLabel[d.conf.codigos]}</span>
+    </div>
+    <div class="sep"></div>
+    <div class="sec-lbl">Escopo regulat\u00f3rio</div>
+    <div class="kv"><span class="kv-l">Restri\u00e7\u00f5es</span><span class="kv-v">${d.extracted.restricoes}</span></div>
+    <div class="kv"><span class="kv-l">Limite</span><span class="kv-v">${d.extracted.limite}</span></div>
+    <div class="kv"><span class="kv-l">Condicionante</span><span class="kv-v">${d.extracted.condicionante}</span></div>
+    <div style="margin-top:10px;padding:6px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);font-size:10.5px;color:var(--text3)">
+      Confian\u00e7a: <span style="color:var(--green);font-weight:600">Alta</span> &mdash; campos extra\u00eddos com NLP &middot; verifica\u00e7\u00e3o cruzada com base regulat\u00f3ria
+    </div>`;
+
+  const impactoOk = d.impacto === 'apto';
+  const paneImpacto = `
+    <div class="sec-lbl">Impacto na aptid\u00e3o do parceiro</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div class="doc-impact ${d.impacto}" style="font-size:13px;padding:6px 12px">${{apto:'Apto para opera\u00e7\u00e3o',risco:'Risco de inaptid\u00e3o em breve',inapto:'Inapto &mdash; n\u00e3o operar'}[d.impacto]}</div>
+    </div>
+    <div class="health-row" style="margin-bottom:14px">
+      ${d.extracted.classes.map(c=>`<span class="hchip ok">&#10003; ${c}</span>`).join('')}
+      ${d.extracted.ufs.map(u=>`<span class="hchip ok">&#10003; ${u}</span>`).join('')}
+      ${d.status==='expiring'?`<span class="hchip warn">&#9888; Vencendo</span>`:''}
+      ${d.status==='expired'?`<span class="hchip err">&#10005; Vencido</span>`:''}
+    </div>
+    <div class="sec-lbl">Lotes que dependem desta aptid\u00e3o</div>
+    ${d.parceiro_key==='ecotrans'?`
+      <div class="kv"><span class="kv-l">Lote #004478</span><span class="kv-v" style="color:var(--amber)">&#9888; Transportador vencendo em 12 dias</span></div>
+      <div class="kv"><span class="kv-l">Lote #004476</span><span class="kv-v" style="color:var(--amber)">&#9888; Transportador vencendo em 12 dias</span></div>
+    `:d.parceiro_key==='ecodestino'?`
+      <div class="kv"><span class="kv-l">Lote #004478</span><span class="kv-v" style="color:var(--amber)">&#9888; Destinador vencendo em 25 dias</span></div>
+      <div class="kv"><span class="kv-l">Lote #004473</span><span class="kv-v" style="color:var(--green)">&#10003; Conclu\u00eddo antes do vencimento</span></div>
+    `:`<div class="kv"><span class="kv-l">Impacto</span><span class="kv-v" style="color:var(--green)">&#10003; Nenhum lote impactado negativamente</span></div>`}
+    <div class="apt-derived">Aptid\u00e3o calculada automaticamente com base em ${DOCS_DATA.filter(x=>x.parceiro_key===d.parceiro_key).length} documentos do parceiro &middot; &uacute;ltima atualiza\u00e7\u00e3o 03/04/2026</div>`;
+
+  document.getElementById('dw-title').innerHTML = d.parceiro;
+  document.getElementById('dw-sub').innerHTML = d.tipo + ' &middot; ' + d.numero;
+  document.getElementById('dw-tabs').innerHTML = ['Resumo','Extra\u00e7\u00e3o','Impacto'].map((t,i)=>
+    `<button class="dw-tab${i===0?' on':''}" onclick="switchTab(this,'dwdp-${d.id}-${i}')">${t}</button>`
+  ).join('');
+  document.getElementById('dw-body').innerHTML = [paneResumo,paneExtracao,paneImpacto].map((html,i)=>
+    `<div class="dw-pane${i===0?' on':''}" id="dwdp-${d.id}-${i}">${html}</div>`
+  ).join('');
+  document.getElementById('dw-ft').innerHTML = `<button class="btn btn-s btn-sm">Download doc</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`;
+  document.getElementById('dw-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('dw').classList.add('open'),10);
+}
+
+// ================================================================
+// CTX DATA
+// ================================================================
+const CTX = {
+  grupo:    {name:'BRK Ambiental',           sub:'Grupo &middot; 5 unidades', dot:'ok',   av:'MA',fn:'Maria Alves',  fr:'Gestora Corporativa',           cob:'82%',cobSub:'grupo consolidado',lotes:'5',lotesSub:'2 aguardando CDF',pend:'6',pendSub:'2 alta severidade',grupo:true,alerts:''},
+  campinas: {name:'BRK &mdash; Campinas',    sub:'0012 &middot; SP',          dot:'ok',   av:'MA',fn:'Maria Alves',  fr:'Gestora &mdash; Campinas',       cob:'82%',cobSub:'rastreabilidade',  lotes:'1',lotesSub:'1 em andamento',  pend:'0',pendSub:'sem pend\u00eancias', grupo:false,alerts:''},
+  rj:       {name:'BRK &mdash; Rio de Jan.', sub:'0008 &middot; RJ',          dot:'warn', av:'CM',fn:'Carlos Mota',  fr:'Gestor &mdash; Rio de Janeiro',   cob:'91%',cobSub:'rastreabilidade',  lotes:'1',lotesSub:'1 divergente',    pend:'2',pendSub:'1 alta', grupo:false,alerts:'<div class="alert a" style="margin-bottom:10px"><strong>LO vencendo em 16 dias</strong>LO-RJ-8812 &middot; INEA-RJ &middot; 18/04/2026</div><div class="alert r"><strong>Diverg&ecirc;ncia &middot; Lote #004476</strong>CDF com destinador divergente</div>'},
+  bh:       {name:'BRK &mdash; Belo Hor.',   sub:'0015 &middot; MG',          dot:'ok',   av:'AP',fn:'Ana Paula',    fr:'Gestora &mdash; Belo Horizonte',  cob:'96%',cobSub:'rastreabilidade',  lotes:'1',lotesSub:'aguardando CDF',  pend:'0',pendSub:'sem pend\u00eancias', grupo:false,alerts:''},
+  poa:      {name:'BRK &mdash; Porto Alegre',sub:'0019 &middot; RS &middot; bloqueada',dot:'err',av:'RL',fn:'Roberto Lima',fr:'Gestor &mdash; Porto Alegre',cob:'71%',cobSub:'rastreabilidade',  lotes:'0',lotesSub:'bloqueada',       pend:'2',pendSub:'2 altas', grupo:false,alerts:'<div class="alert r"><strong>Unidade bloqueada &mdash; bloqueada = true</strong>LI-RS-991 vencida em 01/12/2025. Worker ativou bloqueio.</div>'},
+  for:      {name:'BRK &mdash; Fortaleza',   sub:'0023 &middot; CE',          dot:'ok',   av:'PS',fn:'Paulo Silva',  fr:'Gestor &mdash; Fortaleza',        cob:'88%',cobSub:'rastreabilidade',  lotes:'1',lotesSub:'rascunho auto',   pend:'0',pendSub:'sem pend\u00eancias', grupo:false,alerts:'<div class="alert a"><strong>Lote rascunho criado automaticamente</strong>NF-004475 detectada &rarr; lote #004479 criado</div>'},
+};
+
+const PAGES = {
+  visao:           {t:'Vis\u00e3o Geral',                    a:''},
+  lotes:           {t:'Fluxo de Lotes',                      a:'<button class="btn btn-p btn-sm" onclick="openDw(\'dw-novo-lote\')">+ Novo lote</button>'},
+  ingestao:        {t:'Ingest\u00e3o',                       a:''},
+  pendencias:      {t:'Pend\u00eancias',                     a:''},
+  transportadores: {t:'Transportadores',                     a:''},
+  destinadores:    {t:'Destinadores',                        a:''},
+  documentacoes:   {t:'Documenta\u00e7\u00f5es dos Parceiros',a:'<button class="btn btn-s btn-sm" onclick="openDw(\'dw-upload-doc\')">&#8679; Enviar documento</button>'},
+  unidades:        {t:'Unidades',                            a:''},
+  licencas:        {t:'Licen\u00e7as',                       a:'<button class="btn btn-s" onclick="openDw(\'dw-nova-lic\')">+ Adicionar</button>'},
+  certificados:    {t:'Certificados',                        a:''},
+  cobertura:       {t:'Cobertura de Compliance',             a:''},
+  mapa:            {t:'Mapa de Identidade',                  a:''},
+  exports:         {t:'Exporta\u00e7\u00f5es',               a:''},
+  api:             {t:'API / Integra\u00e7\u00f5es',         a:''},
+};
+
+const PARC = {
+  '12.345.678/0001-90': {t:'ok',   nome:'Transcol Log\u00edstica Ambiental Ltda', hab:'Res\u00edduos Classe I e II'},
+  '98.765.432/0001-10': {t:'err',  msg:'Empresa SUSPENSA no SINIR desde 12/01/2026.'},
+  '11.222.333/0001-44': {t:'warn', nome:'EcoDestino Tratamento de Res\u00edduos S.A.', hab:'Coprocessamento', venc:'28/04/2026'},
+};
+
+// ================================================================
+// LOTE DRAWER DATA
+// ================================================================
+function lotePane(id) {
+  const map = {
+    'lote-473': {
+      title:'Lote #004473', sub:'Conclu\u00eddo &middot; BRK Campinas',
+      tabs:['Fluxo','Sa\u00fade','Aptid\u00e3o dos Parceiros','Certificado'],
+      panes:[
+        `<div class="g2" style="margin-bottom:14px">
+          <div class="gf"><label>Res\u00edduo</label><span>\u00d3leos Lubrificantes &middot; 1301</span></div>
+          <div class="gf"><label>Quantidade</label><span>800 kg</span></div>
+          <div class="gf"><label>Unidade</label><span>BRK &mdash; Campinas</span></div>
+          <div class="gf"><label>Status</label><span><span class="badge ok">Conclu\u00eddo</span></span></div>
+        </div>
+        <div class="sec-lbl">Marcos do fluxo</div>
+        <div class="kv"><span class="kv-l">&#10003; NF</span><span class="kv-v">NF-e-003891 &middot; 02/04 &middot; upload</span></div>
+        <div class="kv"><span class="kv-l">&#10003; MTR</span><span class="kv-v">SP-2026-0044720 &middot; 03/04 09:14 &middot; SIGOR-SP</span></div>
+        <div class="kv"><span class="kv-l">&#10003; Transporte</span><span class="kv-v">Transcol &middot; conclu\u00eddo</span></div>
+        <div class="kv"><span class="kv-l">&#10003; CDF</span><span class="kv-v">SP-CDF-2026-113002 &middot; 03/04 14:22 &middot; e-mail</span></div>
+        <div class="kv"><span class="kv-l">&#10003; Encerrado</span><span class="kv-v">Certificado gerado automaticamente</span></div>`,
+        `<div class="health-row" style="margin-bottom:14px">
+          <span class="hchip ok">&#10003; Unidade apta</span>
+          <span class="hchip ok">&#10003; Transportador apto</span>
+          <span class="hchip ok">&#10003; Destinador apto</span>
+          <span class="hchip ok">&#10003; Evid\u00eancias completas</span>
+          <span class="hchip ok">&#10003; Certific\u00e1vel</span>
+        </div>
+        <div class="sec-lbl">Score das evid\u00eancias</div>
+        <div class="sbar-row"><div class="sbar-lbl">CNPJ detectado</div><div class="sbar-t"><div class="sbar-f h" style="width:100%"></div></div><div class="sbar-pct h">100%</div></div>
+        <div class="sbar-row"><div class="sbar-lbl">N\u00ba MTR referenciado</div><div class="sbar-t"><div class="sbar-f h" style="width:97%"></div></div><div class="sbar-pct h">97%</div></div>
+        <div class="sbar-row"><div class="sbar-lbl">Res\u00edduo + peso</div><div class="sbar-t"><div class="sbar-f h" style="width:95%"></div></div><div class="sbar-pct h">95%</div></div>`,
+        `<div class="sec-lbl">Aptid\u00e3o no momento da opera\u00e7\u00e3o</div>
+        <div class="kv"><span class="kv-l">Transportador</span><span class="kv-v" style="color:var(--green)">&#10003; Transcol &mdash; Apto &middot; LO-SP-9912 v\u00e1lida</span></div>
+        <div class="kv"><span class="kv-l">Destinador</span><span class="kv-v" style="color:var(--green)">&#10003; EcoDestino &mdash; Apto &middot; LO-MG-4412 v\u00e1lida</span></div>
+        <div class="kv"><span class="kv-l">Classe do res\u00edduo</span><span class="kv-v" style="color:var(--green)">&#10003; Classe I &mdash; coberta por ambos</span></div>
+        <div class="kv"><span class="kv-l">UF</span><span class="kv-v" style="color:var(--green)">&#10003; SP &mdash; autorizada para o transportador</span></div>
+        <div class="apt-derived">Aptid\u00e3o verificada a partir de 3 documentos v\u00e1lidos do transportador e 3 do destinador &middot; Verificado em 03/04/2026 14:35</div>`,
+        `<div class="cert">
+          <div class="cert-hd">&#10022; Certificado de Rastreabilidade Akrantis</div>
+          <div class="cert-g">
+            <div class="cef"><label>N\u00ba</label><span>AKR-2026-004473</span></div>
+            <div class="cef"><label>Data</label><span>03/04/2026 14:35</span></div>
+            <div class="cef"><label>MTR</label><span style="font-family:'Geist Mono',monospace;font-size:11px">SP-2026-0044720</span></div>
+            <div class="cef"><label>CDF</label><span style="font-family:'Geist Mono',monospace;font-size:11px">SP-CDF-2026-113002</span></div>
+            <div class="cef"><label>Geradora</label><span>BRK &mdash; Campinas</span></div>
+            <div class="cef"><label>Destinador</label><span>EcoDestino S.A.</span></div>
+          </div>
+          <div class="cert-foot">&#10003; Cadeia completa verificada &middot; Gerado automaticamente</div>
+        </div>`,
+      ],
+      ft:`<button class="btn btn-s btn-sm">Download PDF</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+    },
+    'lote-478': {
+      title:'Lote #004478', sub:'Aguardando CDF &middot; Belo Horizonte',
+      tabs:['Fluxo','Aptid\u00e3o dos Parceiros'],
+      panes:[
+        `<div class="g2" style="margin-bottom:14px">
+          <div class="gf"><label>Res\u00edduo</label><span>Res\u00edduos Met\u00e1licos &middot; 1101</span></div>
+          <div class="gf"><label>Quantidade</label><span>2.100 kg</span></div>
+          <div class="gf"><label>Transportador</label><span>EcoTrans</span></div>
+          <div class="gf"><label>Destinador</label><span>EcoDestino</span></div>
+        </div>
+        <div class="kv"><span class="kv-l">&#10003; NF</span><span class="kv-v">NF-e-004100 &middot; 01/04</span></div>
+        <div class="kv"><span class="kv-l">&#10003; MTR</span><span class="kv-v">MG-2026-0048821 &middot; MTR-MG</span></div>
+        <div class="kv"><span class="kv-l">&#10003; Transporte</span><span class="kv-v">EcoTrans &middot; em andamento</span></div>
+        <div class="kv" style="color:var(--amber)"><span class="kv-l" style="color:var(--amber)">&#9679; Aguardando CDF</span><span class="kv-v" style="color:var(--amber)">Monitor ativo a cada 4h &middot; Prazo: 7 dias</span></div>
+        <div class="alert b" style="margin-top:12px"><strong>O lote n\u00e3o pode ser encerrado sem o CDF</strong>O CDF \u00e9 o marco de encerramento ambiental.</div>`,
+        `<div class="sec-lbl">Aptid\u00e3o no momento atual</div>
+        <div class="kv"><span class="kv-l">Transportador</span><span class="kv-v" style="color:var(--amber)">&#9888; EcoTrans &mdash; LO-RJ-7701 vence em 12 dias</span></div>
+        <div class="kv"><span class="kv-l">Destinador</span><span class="kv-v" style="color:var(--amber)">&#9888; EcoDestino &mdash; LO-MG-4412 vence em 25 dias</span></div>
+        <div class="kv"><span class="kv-l">Classe do res\u00edduo</span><span class="kv-v" style="color:var(--green)">&#10003; Classe I &mdash; coberta por ambos</span></div>
+        <div class="health-row" style="margin-top:12px">
+          <span class="hchip warn">&#9888; Transportador vencendo</span>
+          <span class="hchip warn">&#9888; Destinador vencendo</span>
+          <span class="hchip err">&#10005; CDF ausente</span>
+        </div>
+        <div class="apt-derived" style="margin-top:12px">Aptid\u00e3o baseada em 2 documentos ativos do transportador e 3 do destinador &middot; Verificado em 03/04/2026</div>
+        <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="go('documentacoes',document.getElementById('nav-documentacoes'));closeDw()">Ver documentos dos parceiros &#8594;</button>`,
+      ],
+      ft:`<button class="btn btn-p" onclick="closeDw();setTimeout(simMTR,200)">Reemitir MTR</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+    },
+    'lote-479': {
+      title:'Lote #004479', sub:'Rascunho autom\u00e1tico &middot; Fortaleza',
+      tabs:['Fluxo'],
+      panes:[
+        `<div class="alert a" style="margin-bottom:14px"><strong>Lote criado automaticamente</strong>NF-e-004475 detectada sem lote. Pr\u00f3ximo passo: emitir MTR.</div>
+        <div class="kv"><span class="kv-l">UF da unidade</span><span class="kv-v">CE</span></div>
+        <div class="kv"><span class="kv-l">Sistema MTR</span><span class="kv-v">SINIR &middot; MTR-CE v2023</span></div>
+        <div class="kv"><span class="kv-l">&#10003; NF</span><span class="kv-v">NF-e-004475 &middot; 03/04 07:28</span></div>
+        <div class="kv" style="color:var(--amber)"><span class="kv-l" style="color:var(--amber)">&#9679; MTR pendente</span><span class="kv-v" style="color:var(--amber)">A\u00e7\u00e3o necess\u00e1ria</span></div>`,
+      ],
+      ft:`<button class="btn btn-p" onclick="closeDw();setTimeout(simMTR,200)">Emitir MTR automaticamente</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+    },
+    'lote-476': {
+      title:'Lote #004476', sub:'Diverg\u00eancia &middot; Rio de Janeiro',
+      tabs:['Diverg\u00eancia','Aptid\u00e3o dos Parceiros'],
+      panes:[
+        `<div class="alert r"><strong>Diverg\u00eancia cr\u00edtica &mdash; destinador inconsistente</strong>CDF emitido por destinador diferente do declarado. Poss\u00edvel subdestina\u00e7\u00e3o. Lote bloqueado para certificado.</div>
+        <div class="kv"><span class="kv-l">Lote &rarr; destinador</span><span class="kv-v">EcoDestino Tratamento S.A.</span></div>
+        <div class="kv"><span class="kv-l">CDF &rarr; emitido por</span><span class="kv-v" style="color:var(--red)">Outro Destinador Ltda</span></div>
+        <div class="health-row" style="margin-top:12px">
+          <span class="hchip err">&#10005; Diverg\u00eancia</span>
+          <span class="hchip err">&#10005; N\u00e3o certific\u00e1vel</span>
+        </div>`,
+        `<div class="kv"><span class="kv-l">Transportador</span><span class="kv-v" style="color:var(--amber)">&#9888; EcoTrans &mdash; 12 dias para vencer</span></div>
+        <div class="kv"><span class="kv-l">Destinador declarado</span><span class="kv-v" style="color:var(--red)">&#10005; EcoDestino &mdash; n\u00e3o emitiu CDF</span></div>
+        <div class="kv"><span class="kv-l">CDF recebido de</span><span class="kv-v" style="color:var(--red)">Outro Destinador &mdash; n\u00e3o cadastrado</span></div>
+        <div class="apt-derived" style="margin-top:12px">Aptid\u00e3o do CDF n\u00e3o pode ser verificada: emissor n\u00e3o tem documentos cadastrados no sistema.</div>`,
+      ],
+      ft:`<button class="btn btn-r" onclick="closeDw();go('pendencias',document.getElementById('nav-pendencias'))">Registrar diverg\u00eancia formal</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+    },
+    'lote-471': {
+      title:'Lote #004471', sub:'Conclu\u00eddo &middot; Belo Horizonte',
+      tabs:['Fluxo','Certificado'],
+      panes:[
+        `<div class="g2" style="margin-bottom:14px">
+          <div class="gf"><label>Res\u00edduo</label><span>Res\u00edduos Met\u00e1licos &middot; 1101</span></div>
+          <div class="gf"><label>Quantidade</label><span>3.400 kg</span></div>
+          <div class="gf"><label>Transportador</label><span>Transcol</span></div>
+          <div class="gf"><label>Destinador</label><span>EcoDestino</span></div>
+        </div>
+        <div class="kv"><span class="kv-l">&#10003; NF</span><span class="kv-v">NF-e-003744</span></div>
+        <div class="kv"><span class="kv-l">&#10003; MTR</span><span class="kv-v">MG-2026-0041200 &middot; MTR-MG</span></div>
+        <div class="kv"><span class="kv-l">&#10003; CDF</span><span class="kv-v">MG-CDF-2026-089100</span></div>
+        <div class="kv"><span class="kv-l">&#10003; Encerrado</span><span class="kv-v">01/04/2026</span></div>`,
+        `<div class="cert">
+          <div class="cert-hd">&#10022; Certificado Akrantis</div>
+          <div class="cert-g">
+            <div class="cef"><label>N\u00ba</label><span>AKR-2026-004471</span></div>
+            <div class="cef"><label>Data</label><span>01/04/2026</span></div>
+            <div class="cef"><label>MTR</label><span style="font-family:'Geist Mono',monospace;font-size:11px">MG-2026-0041200</span></div>
+            <div class="cef"><label>CDF</label><span style="font-family:'Geist Mono',monospace;font-size:11px">MG-CDF-2026-089100</span></div>
+          </div>
+          <div class="cert-foot">&#10003; Cadeia completa verificada</div>
+        </div>`,
+      ],
+      ft:`<button class="btn btn-s btn-sm">Download PDF</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+    },
+  };
+  return map[id];
+}
+
+// ================================================================
+// SIMPLE DRAWERS
+// ================================================================
+const DW_SIMPLE = {
+  'dw-i1': {
+    t:'CDF-SP-2026-113002.pdf', s:'Evid\u00eancia forte &middot; CDF &middot; e-mail',
+    b:`<div class="dw-pane on">
+      <div class="alert g"><strong>Vinculado automaticamente</strong>Score 98% \u2265 95%: v\u00ednculo criado pelo middleware.</div>
+      <div class="g2" style="margin-bottom:14px">
+        <div class="gf"><label>Tipo</label><span><span class="slabel strong">CDF &mdash; evid\u00eancia forte</span></span></div>
+        <div class="gf"><label>Score</label><span style="color:var(--green);font-weight:600;font-family:'Geist Mono',monospace">98%</span></div>
+        <div class="gf"><label>CNPJ detectado</label><span style="font-family:'Geist Mono',monospace;font-size:12px">05.437.027/0012</span></div>
+        <div class="gf"><label>Lote vinculado</label><span>#004473</span></div>
+      </div>
+      <div class="sec-lbl">Score por fator</div>
+      <div class="sbar-row"><div class="sbar-lbl">CNPJ detectado</div><div class="sbar-t"><div class="sbar-f h" style="width:100%"></div></div><div class="sbar-pct h">100%</div></div>
+      <div class="sbar-row"><div class="sbar-lbl">N\u00ba MTR referenciado</div><div class="sbar-t"><div class="sbar-f h" style="width:97%"></div></div><div class="sbar-pct h">97%</div></div>
+      <div class="sbar-row"><div class="sbar-lbl">Res\u00edduo + peso</div><div class="sbar-t"><div class="sbar-f h" style="width:95%"></div></div><div class="sbar-pct h">95%</div></div>
+      <div class="sbar-row"><div class="sbar-lbl">Email remetente</div><div class="sbar-t"><div class="sbar-f m" style="width:78%"></div></div><div class="sbar-pct m">78%</div></div>
+    </div>`,
+    ft:`<button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-i2': {
+    t:'CDF-MG-2026-089441.pdf', s:'Score 82% &mdash; revis\u00e3o necess\u00e1ria',
+    b:`<div class="dw-pane on">
+      <div class="alert a"><strong>Score 82% &mdash; abaixo do limiar autom\u00e1tico (95%)</strong>A\u00e7\u00e3o registrada como criado_por = gestor.</div>
+      <div class="g2" style="margin-bottom:14px">
+        <div class="gf"><label>Lote sugerido</label><span>#004478</span></div>
+        <div class="gf"><label>Score</label><span style="color:var(--amber);font-weight:600;font-family:'Geist Mono',monospace">82%</span></div>
+      </div>
+      <div id="i2-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>V\u00ednculo confirmado</h4><p>Registrado: criado_por = gestor.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('i2-suc').classList.add('show')">Confirmar lote #004478</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-i3': {
+    t:'CDF-RJ-2026-071204.pdf', s:'Diverg\u00eancia de destinador',
+    b:`<div class="dw-pane on">
+      <div class="alert r"><strong>Destinador divergente</strong>CDF emitido por destinador diferente do declarado no Lote #004476.</div>
+      <div class="kv"><span class="kv-l">Lote #004476 &rarr;</span><span class="kv-v">EcoDestino S.A.</span></div>
+      <div class="kv"><span class="kv-l">Este CDF &rarr;</span><span class="kv-v" style="color:var(--red)">Outro Destinador Ltda</span></div>
+    </div>`,
+    ft:`<button class="btn btn-r">Registrar diverg\u00eancia formal</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-i4': {
+    t:'controle_abril.xlsx', s:'Dado auxiliar &mdash; reconcilia\u00e7\u00e3o',
+    b:`<div class="dw-pane on">
+      <div class="alert b"><strong>Planilha &mdash; <span class="slabel weak">Auxiliar</span></strong>N\u00e3o equivale a evid\u00eancia forte. N\u00e3o encerra lotes nem emite certificados.</div>
+      <div class="kv"><span class="kv-l">Total de linhas</span><span class="kv-v">47</span></div>
+      <div class="kv"><span class="kv-l">Reconciliadas</span><span class="kv-v" style="color:var(--green)">32</span></div>
+      <div class="kv"><span class="kv-l">Com gap</span><span class="kv-v" style="color:var(--amber)">15</span></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="closeDw()">Revisar gaps</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-i5': {
+    t:'NF-e-004475.pdf', s:'NF criou lote rascunho automaticamente',
+    b:`<div class="dw-pane on">
+      <div class="alert a"><strong>Lote #004479 criado automaticamente</strong>NF detectada sem lote. Pr\u00f3xima etapa: emitir MTR.</div>
+      <div class="kv"><span class="kv-l">Lote criado</span><span class="kv-v">#004479 &middot; rascunho</span></div>
+      <div class="kv"><span class="kv-l">Motor MTR</span><span class="kv-v">SINIR &middot; CE v2023</span></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="closeDw();setTimeout(simMTR,200)">Emitir MTR</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-pend-poa': {
+    t:'Unidade bloqueada &mdash; Porto Alegre', s:'Alta &middot; 123 dias',
+    b:`<div class="dw-pane on">
+      <div class="alert r"><strong>bloqueada = true &mdash; LI-RS-991 vencida</strong>Worker ativou bloqueio automaticamente em 02/12/2025.</div>
+      <div class="kv"><span class="kv-l">Documento</span><span class="kv-v" style="font-family:'Geist Mono',monospace;font-size:12px">LI-RS-991</span></div>
+      <div class="kv"><span class="kv-l">\u00d3rg\u00e3o</span><span class="kv-v">FEPAM-RS</span></div>
+      <div class="kv"><span class="kv-l">Vencimento</span><span class="kv-v" style="color:var(--red)">01/12/2025</span></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="closeDw();go('licencas',document.getElementById('nav-licencas'))">Registrar renova\u00e7\u00e3o</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-pend-div': {
+    t:'Diverg\u00eancia &mdash; Lote #004476', s:'Alta &middot; 2h',
+    b:`<div class="dw-pane on"><div class="alert r"><strong>Destinador divergente</strong>Poss\u00edvel subdestina\u00e7\u00e3o. Lote bloqueado para certificado.</div></div>`,
+    ft:`<button class="btn btn-r">Diverg\u00eancia formal</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-pend-rj': {
+    t:'LO vencendo &mdash; Rio de Janeiro', s:'M\u00e9dia &middot; 16 dias',
+    b:`<div class="dw-pane on"><div class="alert a"><strong>LO-RJ-8812 vence em 18/04/2026</strong>Escalar\u00e1 para Alta em 7 dias.</div></div>`,
+    ft:`<button class="btn btn-p">Registrar renova\u00e7\u00e3o</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-lic-rj': {
+    t:'LO-RJ-8812', s:'Vencendo em 16 dias &middot; Rio de Janeiro',
+    b:`<div class="dw-pane on"><div class="alert a"><strong>Vence em 18/04/2026</strong></div><div class="kv"><span class="kv-l">\u00d3rg\u00e3o</span><span class="kv-v">INEA-RJ</span></div></div>`,
+    ft:`<button class="btn btn-p">Registrar renova\u00e7\u00e3o</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-lic-poa': {
+    t:'LI-RS-991', s:'Vencida &middot; Porto Alegre',
+    b:`<div class="dw-pane on"><div class="alert r"><strong>LI vencida &middot; bloqueada = true</strong></div></div>`,
+    ft:`<button class="btn btn-p">Registrar renova\u00e7\u00e3o</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-nova-lic': {
+    t:'Adicionar Licen\u00e7a', s:'',
+    b:`<div class="dw-pane on">
+      <div class="ff"><label class="fl">Tipo</label><select class="fi2"><option>LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o</option><option>LI</option><option>LP</option></select></div>
+      <div class="fg2"><div class="ff"><label class="fl">N\u00famero</label><input class="fi2" placeholder="LO-SP-4471"/></div><div class="ff"><label class="fl">\u00d3rg\u00e3o</label><input class="fi2" placeholder="CETESB-SP"/></div></div>
+      <div class="fg2"><div class="ff"><label class="fl">Emiss\u00e3o</label><input class="fi2" type="date"/></div><div class="ff"><label class="fl">Vencimento</label><input class="fi2" type="date"/></div></div>
+      <div class="ff"><label class="fl">Unidade</label><select class="fi2"><option value="">Selecione...</option><option>Campinas</option><option>Rio de Janeiro</option><option>Belo Horizonte</option><option>Porto Alegre</option><option>Fortaleza</option></select></div>
+      <div id="nl-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Salvo</h4><p>Alertas ativados em 90, 30 e 7 dias.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('nl-suc').classList.add('show')">Salvar</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-upload-doc': {
+    t:'Enviar documento de parceiro', s:'Licen\u00e7a &middot; CADRI &middot; Habilita\u00e7\u00e3o',
+    b:`<div class="dw-pane on">
+      <div class="alert n"><strong>Documento do parceiro</strong>Diferente das evid\u00eancias de lote (NF, MTR, CDF). Aqui voc\u00ea envia licen\u00e7as e autoriza\u00e7\u00f5es que constroem a aptid\u00e3o do parceiro.</div>
+      <div class="ff"><label class="fl">Parceiro</label><select class="fi2"><option value="">Selecione...</option><option>Transcol Log\u00edstica Ambiental</option><option>EcoTrans Res\u00edduos</option><option>EcoDestino Tratamento S.A.</option><option>Cimento Verde</option></select></div>
+      <div class="ff"><label class="fl">Tipo de documento</label><select class="fi2"><option>LO &mdash; Licen\u00e7a de Opera\u00e7\u00e3o</option><option>CADRI</option><option>Habilita\u00e7\u00e3o SINIR</option><option>LI &mdash; Licen\u00e7a de Instala\u00e7\u00e3o</option><option>Autoriza\u00e7\u00e3o Ambiental</option></select></div>
+      <div class="upl" style="padding:20px;margin-bottom:10px" onclick="this.classList.add('done');this.innerHTML='<div style=font-size:18px;color:var(--green)>&#10003;</div><div class=upl-t style=color:var(--green)>Arquivo selecionado</div>'">
+        <div style="font-size:18px;margin-bottom:4px;color:var(--text3)">&#8679;</div>
+        <div class="upl-t">Selecionar arquivo</div>
+        <div class="upl-s">PDF &middot; imagem &middot; XML</div>
+      </div>
+      <div id="du-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Documento enviado</h4><p>Leitura autom\u00e1tica iniciada. Aptid\u00e3o atualizada em breve.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('du-suc').classList.add('show')">Enviar e processar</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-tp-transcol': {
+    t:'Transcol Log\u00edstica Ambiental', s:'Transportador &middot; Apto',
+    b:`<div class="dw-pane on">
+      <div class="health-row" style="margin-bottom:14px"><span class="hchip ok">&#10003; Apto</span><span class="hchip ok">&#10003; SINIR ativo</span><span class="hchip ok">&#10003; 3 documentos v\u00e1lidos</span></div>
+      <div class="kv"><span class="kv-l">Habilita\u00e7\u00e3o</span><span class="kv-v">Res\u00edduos Classe I e II</span></div>
+      <div class="kv"><span class="kv-l">UFs</span><span class="kv-v">SP, RJ, MG, ES</span></div>
+      <div class="kv"><span class="kv-l">Licen\u00e7a principal</span><span class="kv-v">LO-SP-9912 &middot; v. 15/08/2027</span></div>
+      <div class="apt-derived">Aptid\u00e3o calculada com base em 3 documentos v\u00e1lidos &middot; &uacute;lt. leitura 03/04/2026</div>
+      <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="go('documentacoes',document.getElementById('nav-documentacoes'));closeDw()">Ver todos os documentos &#8594;</button>
+    </div>`,
+    ft:`<button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-tp-ecotrans': {
+    t:'EcoTrans Res\u00edduos Ltda', s:'Transportador &middot; Risco &middot; 12 dias',
+    b:`<div class="dw-pane on">
+      <div class="alert a"><strong>LO-RJ-7701 vence em 12 dias</strong>Parceiro ficar\u00e1 inapto ap\u00f3s o vencimento.</div>
+      <div class="health-row" style="margin-bottom:14px"><span class="hchip ok">&#10003; Apto agora</span><span class="hchip warn">&#9888; Licen\u00e7a vencendo</span><span class="hchip warn">&#9888; 2 documentos vencendo</span></div>
+      <div class="kv"><span class="kv-l">Aptid\u00e3o derivada de</span><span class="kv-v" style="font-style:italic;color:var(--text3)">2 documentos &middot; 1 vencendo em 12 dias</span></div>
+      <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="go('documentacoes',document.getElementById('nav-documentacoes'));closeDw()">Ver documentos &#8594;</button>
+    </div>`,
+    ft:`<button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+  'dw-manual-tp': {
+    t:'Cadastro manual &mdash; Transportador', s:'fonte = manual &middot; validado = false',
+    b:`<div class="dw-pane on">
+      <div class="alert n"><strong>Cadastro sem valida\u00e7\u00e3o no SINIR</strong>Marcado como <code>fonte = manual</code>. Sincroniza\u00e7\u00e3o agendada para 03:00.</div>
+      <div class="ff"><label class="fl">Raz\u00e3o social *</label><input class="fi2" placeholder="Transportador Exemplo Ltda"/></div>
+      <div class="fg2"><div class="ff"><label class="fl">CNPJ</label><input class="fi2" placeholder="00.000.000/0001-00" maxlength="18"/></div><div class="ff"><label class="fl">UF</label><select class="fi2"><option value="">Selecione...</option><option>SP</option><option>RJ</option><option>MG</option><option>RS</option><option>CE</option></select></div></div>
+      <div class="ff"><label class="fl">Habilita\u00e7\u00e3o</label><input class="fi2" placeholder="Res\u00edduos Classe I e II"/></div>
+      <div id="mt-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Transportador cadastrado</h4><p>fonte = manual. Sincroniza\u00e7\u00e3o SINIR agendada.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('mt-suc').classList.add('show')">Salvar como manual</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-manual-dt': {
+    t:'Cadastro manual &mdash; Destinador', s:'fonte = manual &middot; validado = false',
+    b:`<div class="dw-pane on">
+      <div class="alert n"><strong>Cadastro sem valida\u00e7\u00e3o no SINIR</strong>Marcado como <code>fonte = manual</code>.</div>
+      <div class="ff"><label class="fl">Raz\u00e3o social *</label><input class="fi2" placeholder="Destinador Exemplo S.A."/></div>
+      <div class="fg2"><div class="ff"><label class="fl">CNPJ</label><input class="fi2" placeholder="00.000.000/0001-00" maxlength="18"/></div><div class="ff"><label class="fl">UF</label><select class="fi2"><option value="">Selecione...</option><option>SP</option><option>RJ</option><option>MG</option><option>RS</option><option>CE</option></select></div></div>
+      <div class="ff"><label class="fl">Tecnologia</label><select class="fi2"><option>Coprocessamento</option><option>Aterro Classe I</option><option>Inciner\u00e0\u00e7\u00e3o</option><option>Reciclagem</option></select></div>
+      <div id="md-suc" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Destinador cadastrado</h4><p>fonte = manual. Sincroniza\u00e7\u00e3o agendada.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('md-suc').classList.add('show')">Salvar como manual</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-novo-lote': {
+    t:'Novo lote', s:'',
+    b:`<div class="dw-pane on">
+      <div class="ff"><label class="fl">Unidade geradora</label><select class="fi2"><option value="">Selecione...</option><option>Campinas</option><option>Rio de Janeiro</option><option>Belo Horizonte</option><option>Fortaleza</option></select></div>
+      <div class="fg2"><div class="ff"><label class="fl">C\u00f3digo do res\u00edduo</label><input class="fi2" placeholder="1301"/></div><div class="ff"><label class="fl">Quantidade (kg)</label><input class="fi2" type="number" placeholder="0"/></div></div>
+      <div class="ff"><label class="fl">Transportador</label><select class="fi2"><option value="">Selecione...</option><option>Transcol Log\u00edstica Ambiental</option><option>EcoTrans Res\u00edduos</option></select></div>
+      <div class="ff"><label class="fl">Destinador</label><select class="fi2"><option value="">Selecione...</option><option>EcoDestino Tratamento S.A.</option><option>Cimento Verde</option></select></div>
+      <div id="nl-suc2" class="suc"><span style="font-size:16px">&#10003;</span><div><h4>Lote criado</h4><p>Pr\u00f3xima etapa: emitir MTR.</p></div></div>
+    </div>`,
+    ft:`<button class="btn btn-p" onclick="document.getElementById('nl-suc2').classList.add('show')">Criar lote</button><button class="btn btn-s" onclick="closeDw()">Cancelar</button>`,
+  },
+  'dw-mtr': {
+    t:'MTR emitido automaticamente', s:'Motor regulat\u00f3rio aplicado',
+    b:`<div class="dw-pane on">
+      <div class="alert g"><strong>MTR gerado com sucesso</strong>Motor regulat\u00f3rio identificou a UF e aplicou o template correto.</div>
+      <div class="g2">
+        <div class="gf"><label>N\u00famero</label><span style="font-family:'Geist Mono',monospace;font-size:12px">MG-2026-0048821</span></div>
+        <div class="gf"><label>Sistema</label><span>MTR-MG</span></div>
+        <div class="gf"><label>UF &rarr; Template</label><span>MG &rarr; MTR-MG v2024</span></div>
+        <div class="gf"><label>Aptid\u00e3o verificada</label><span style="color:var(--green)">&#10003; Todos aptos</span></div>
+      </div>
+    </div>`,
+    ft:`<button class="btn btn-s btn-sm">Download PDF</button><button class="btn btn-s" onclick="closeDw()">Fechar</button>`,
+  },
+};
+
+// ================================================================
+// VISÃO GERAL — render lote cards
+// ================================================================
+function renderVisaoLotes() {
+  const el = document.getElementById('d-lotes-list');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="lote-card err" onclick="openLote('lote-476')">
+      <div class="lote-header"><span class="lote-num">#004476</span><span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301</span><span class="badge err nd">Diverg&ecirc;ncia</span><button class="btn btn-r btn-sm" onclick="event.stopPropagation();openLote('lote-476')">Resolver</button></div>
+      <div class="lote-meta"><span>Rio de Janeiro</span><span>500 kg</span></div>
+    </div>
+    <div class="lote-card warn" onclick="openLote('lote-479')">
+      <div class="lote-header"><span class="lote-num">#004479</span><span class="lote-name">&Oacute;leos Lubrificantes &middot; 1301</span><span class="badge warn nd">MTR pendente</span><button class="btn btn-p btn-sm" onclick="event.stopPropagation();simMTR()">Emitir MTR</button></div>
+      <div class="lote-meta"><span>Fortaleza</span></div>
+    </div>
+    <div class="lote-card warn" onclick="openLote('lote-478')">
+      <div class="lote-header"><span class="lote-num">#004478</span><span class="lote-name">Res&iacute;duos Met&aacute;licos &middot; 1101</span><span class="badge warn nd">Aguardando CDF</span></div>
+      <div class="lote-meta"><span>Belo Horizonte</span><span>2.100 kg</span></div>
+    </div>`;
+}
+
+// ================================================================
+// NAV
+// ================================================================
+function go(p, el) {
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  else { const n=document.getElementById('nav-'+p); if(n) n.classList.add('on'); }
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  const pg = document.getElementById('page-'+p);
+  if(pg) pg.classList.add('on');
+  const cfg = PAGES[p] || {t:p, a:''};
+  document.getElementById('topbar-title').textContent = cfg.t;
+  document.getElementById('topbar-acts').innerHTML = cfg.a;
+  closeCtxDd();
+  if(window.innerWidth<=768) closeSb();
+  window.scrollTo(0,0);
+  if(p==='visao') renderVisaoLotes();
+  if(p==='documentacoes') renderDocs(false);
+}
+
+// ================================================================
+// SIDEBAR
+// ================================================================
+function toggleSb() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-ov').classList.toggle('open'); }
+function closeSb()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-ov').classList.remove('open'); }
+
+// ================================================================
+// CTX
+// ================================================================
+function toggleCtx(e) { if(e) e.stopPropagation(); document.getElementById('ctx-dd').classList.toggle('open'); }
+function closeCtxDd() { document.getElementById('ctx-dd').classList.remove('open'); }
+function setCtx(key,e) {
+  if(e) e.stopPropagation();
+  const c = CTX[key]; if(!c) return;
+  document.getElementById('ctx-name').innerHTML = c.name;
+  document.getElementById('ctx-sub').innerHTML  = c.sub;
+  const dot = document.querySelector('#sb-ctx-btn > .ctx-dot');
+  if(dot) dot.className = 'ctx-dot '+c.dot;
+  document.getElementById('sb-av').textContent = c.av;
+  document.getElementById('sb-fn').textContent = c.fn;
+  document.getElementById('sb-fr').textContent = c.fr;
+  document.getElementById('d-cob').textContent        = c.cob;
+  document.getElementById('d-cob-sub').textContent    = c.cobSub;
+  document.getElementById('d-lotes-ativos').textContent = c.lotes;
+  document.getElementById('d-lotes-sub').textContent  = c.lotesSub;
+  document.getElementById('d-pend').textContent       = c.pend;
+  document.getElementById('d-pend-sub').textContent   = c.pendSub;
+  const ac = document.getElementById('d-alerts-container');
+  if(ac) ac.innerHTML = c.alerts || '';
+  Object.keys(CTX).forEach(k=>{
+    const chk = document.getElementById('cchk-'+k);
+    const opt = document.getElementById('copt-'+k);
+    if(chk) chk.style.display = (k===key)?'inline':'none';
+    if(opt) opt.classList.toggle('on', k===key);
+  });
+  closeCtxDd();
+  if(window.innerWidth<=768) closeSb();
+}
+document.addEventListener('click', e=>{ if(!e.target.closest('#sb-ctx-btn')) closeCtxDd(); });
+
+// ================================================================
+// DRAWER
+// ================================================================
+function openLote(id) {
+  const d = lotePane(id); if(!d) return;
+  document.getElementById('dw-title').innerHTML = d.title;
+  document.getElementById('dw-sub').innerHTML   = d.sub;
+  document.getElementById('dw-tabs').innerHTML  = d.tabs.map((t,i)=>
+    `<button class="dw-tab${i===0?' on':''}" onclick="switchTab(this,'dwp-${id}-${i}')">${t}</button>`
+  ).join('');
+  document.getElementById('dw-body').innerHTML = d.panes.map((html,i)=>
+    `<div class="dw-pane${i===0?' on':''}" id="dwp-${id}-${i}">${html}</div>`
+  ).join('');
+  document.getElementById('dw-ft').innerHTML = d.ft||'<button class="btn btn-s" onclick="closeDw()">Fechar</button>';
+  document.getElementById('dw-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('dw').classList.add('open'),10);
+}
+
+function openDw(id) {
+  const d = DW_SIMPLE[id]; if(!d) return;
+  document.getElementById('dw-title').innerHTML = d.t;
+  document.getElementById('dw-sub').innerHTML   = d.s||'';
+  document.getElementById('dw-tabs').innerHTML  = '';
+  document.getElementById('dw-body').innerHTML  = d.b;
+  document.getElementById('dw-ft').innerHTML    = d.ft||'<button class="btn btn-s" onclick="closeDw()">Fechar</button>';
+  document.getElementById('dw-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('dw').classList.add('open'),10);
+}
+
+function switchTab(btn,paneId) {
+  btn.closest('.dw-tabs').querySelectorAll('.dw-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('dw-body').querySelectorAll('.dw-pane').forEach(p=>p.classList.remove('on'));
+  const p = document.getElementById(paneId);
+  if(p) p.classList.add('on');
+}
+
+function closeDw() {
+  document.getElementById('dw').classList.remove('open');
+  document.getElementById('dw-ov').classList.remove('open');
+}
+
+// ================================================================
+// FILTERS
+// ================================================================
+function filtPend() {
+  const s   = (document.getElementById('pend-s')?.value  ||'').toLowerCase();
+  const sev = document.getElementById('pend-sev')?.value ||'';
+  const tp  = document.getElementById('pend-tp')?.value  ||'';
+  const rows = document.querySelectorAll('#pend-list .pend-item');
+  let n=0;
+  rows.forEach(r=>{
+    const nm=(r.querySelector('.pend-title')?.textContent||'').toLowerCase();
+    const show=(!s||nm.includes(s))&&(!sev||r.dataset.sev===sev)&&(!tp||r.dataset.tp===tp);
+    r.style.display=show?'':'none';
+    if(show) n++;
+  });
+  const el=document.getElementById('pend-cnt');
+  if(el) el.textContent=n+' pend\u00eancia'+(n!==1?'s':'');
+}
+
+// ================================================================
+// UPLOAD
+// ================================================================
+function simUpload() {
+  const zone=document.getElementById('upl-zone');
+  const proc=document.getElementById('upl-proc');
+  zone.style.display='none'; proc.style.display='block';
+  const steps=[
+    {id:'pl1',done:'Entrada registrada na fila'},
+    {id:'pl2',done:'CDF &middot; evid\u00eancia forte &middot; for\u00e7a: alta'},
+    {id:'pl3',done:'CNPJ: 05.437.027/0012 \u2192 BRK Campinas'},
+    {id:'pl4',done:'Score: 98% \u2265 95% \u2192 v\u00ednculo autom\u00e1tico'},
+    {id:'pl5',done:'V\u00ednculo criado &middot; fluxo atualizado'},
+  ];
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i>0){ const p=document.getElementById(steps[i-1].id); if(p){p.querySelector('.plog-d').className='plog-d done';p.querySelector('.plog-d').textContent='\u2713';p.querySelector('.plog-tx').className='plog-tx done';p.querySelector('.plog-tx').innerHTML=steps[i-1].done;} }
+    if(i<steps.length){ const c=document.getElementById(steps[i].id); if(c){c.style.opacity='1';c.querySelector('.plog-d').className='plog-d act';c.querySelector('.plog-tx').className='plog-tx act';} }
+    i++;
+    if(i>steps.length){ clearInterval(iv); setTimeout(()=>{
+      proc.innerHTML='<div class="alert g" style="margin:0"><strong>Processado automaticamente</strong>V\u00ednculo criado &middot; fluxo atualizado &middot; evid\u00eancia forte confirmada.</div>';
+      zone.style.display='block'; zone.classList.add('done');
+      zone.innerHTML='<div style="font-size:20px;margin-bottom:5px;color:var(--green)">\u2713</div><div class="upl-t" style="color:var(--green)">Processado com sucesso</div><div class="upl-s">Clique para enviar outra entrada</div>';
+    },400); }
+  },700);
+}
+
+function simMTR() { openDw('dw-mtr'); }
+
+// ================================================================
+// CNPJ
+// ================================================================
+function fmtC(el,p) {
+  let v=el.value.replace(/\D/g,'').slice(0,14);
+  v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2');
+  el.value=v;
+  document.getElementById(p+'-btn').disabled=v.replace(/\D/g,'').length<14;
+}
+function usarCNPJ(p,cnpj) { document.getElementById(p+'-cnpj').value=cnpj; document.getElementById(p+'-btn').disabled=false; buscar(p); }
+function resetP(p) {
+  ['rok','rerr','rwarn'].forEach(s=>{ const el=document.getElementById(p+'-'+s); if(el) el.classList.remove('show'); });
+  const suc=document.getElementById(p+'-suc'); if(suc) suc.classList.remove('show');
+}
+function buscar(p) {
+  resetP(p);
+  const cnpj=document.getElementById(p+'-cnpj').value;
+  const btn=document.getElementById(p+'-btn'), spin=document.getElementById(p+'-spin'), bt=document.getElementById(p+'-bt');
+  btn.disabled=true; spin.classList.add('on'); bt.textContent='...';
+  setTimeout(()=>{
+    spin.classList.remove('on'); bt.textContent='Buscar no SINIR'; btn.disabled=false;
+    const d=PARC[cnpj];
+    if(!d){ const el=document.getElementById(p+'-rerr'); if(el){el.classList.add('show');const msg=document.getElementById(p+'-msg');if(msg) msg.textContent='CNPJ n\u00e3o encontrado no SINIR.';} return; }
+    if(d.t==='err'){ const el=document.getElementById(p+'-rerr'); if(el){el.classList.add('show');const msg=document.getElementById(p+'-msg');if(msg) msg.textContent=d.msg;} return; }
+    if(d.t==='ok'){ const el=document.getElementById(p+'-rok'); if(el) el.classList.add('show'); const n=document.getElementById(p+'-nome'),h=document.getElementById(p+'-hab'); if(n) n.innerHTML=d.nome; if(h) h.innerHTML=d.hab; return; }
+    if(d.t==='warn'){ const el=document.getElementById(p+'-rwarn'); if(el) el.classList.add('show'); const wn=document.getElementById(p+'-wn'),wv=document.getElementById(p+'-wv'); if(wn) wn.innerHTML=d.nome; if(wv) wv.textContent=d.venc; }
+  },1500);
+}
+function salvarP(p) {
+  ['save','save2'].forEach(s=>{ const el=document.getElementById(p+'-'+s); if(el) el.style.display='none'; });
+  const suc=document.getElementById(p+'-suc'); if(suc) suc.classList.add('show');
+}
+
+// ================================================================
+// INIT
+// ================================================================
+renderVisaoLotes();
+</script>
+</body>
+</html>
